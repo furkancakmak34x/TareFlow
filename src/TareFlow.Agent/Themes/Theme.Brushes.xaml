@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"> <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}" />
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{DynamicResource SecondaryColor}" />
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{DynamicResource BackgroundColor}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}" />
+    <SolidColorBrush x:Key="SurfaceVariantBrush" Color="{DynamicResource SurfaceVariantColor}" />
+    <SolidColorBrush x:Key="InputBrush" Color="{DynamicResource InputColor}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{DynamicResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{DynamicResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource BorderColor}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{DynamicResource ErrorColor}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource SuccessColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource WarningColor}" />
+    <SolidColorBrush x:Key="InfoBrush" Color="{DynamicResource InfoColor}" />
+    <SolidColorBrush x:Key="NeutralBrush" Color="{DynamicResource NeutralColor}" />
+    <SolidColorBrush x:Key="ErrorSoftBrush" Color="{DynamicResource ErrorSoftColor}" />
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="{DynamicResource SuccessSoftColor}" />
+    <SolidColorBrush x:Key="WarningSoftBrush" Color="{DynamicResource WarningSoftColor}" />
+    <SolidColorBrush x:Key="InfoSoftBrush" Color="{DynamicResource InfoSoftColor}" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="{DynamicResource AccentSoftColor}" />
+    <SolidColorBrush x:Key="DisabledBrush" Color="{DynamicResource DisabledColor}" />
+    <SolidColorBrush x:Key="OnPrimaryBrush" Color="{DynamicResource OnPrimaryColor}" />
+    <SolidColorBrush x:Key="OnSecondaryBrush" Color="{DynamicResource OnSecondaryColor}" />
+    <SolidColorBrush x:Key="OnAccentBrush" Color="{DynamicResource OnAccentColor}" />
+    <SolidColorBrush x:Key="OnSurfaceBrush" Color="{DynamicResource OnSurfaceColor}" />
+    <SolidColorBrush x:Key="HoverOverlayBrush" Color="{DynamicResource HoverOverlayColor}" />
+    <SolidColorBrush x:Key="PressedOverlayBrush" Color="{DynamicResource PressedOverlayColor}" />
+    <SolidColorBrush x:Key="ShadowBrush" Color="{DynamicResource ShadowColor}" />
+    <SolidColorBrush x:Key="FocusBrush" Color="{DynamicResource FocusColor}" />
+    <SolidColorBrush x:Key="TransparentBrush" Color="Transparent" />
+
+    <SolidColorBrush x:Key="BgBrush" Color="{DynamicResource BackgroundColor}" />
+    <SolidColorBrush x:Key="CardBrush" Color="{DynamicResource SurfaceColor}" />
+    <SolidColorBrush x:Key="InputBg" Color="{DynamicResource InputColor}" />
+    <SolidColorBrush x:Key="TextPrimary" Color="{DynamicResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondary" Color="{DynamicResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="AccentColorBrush" Color="{DynamicResource AccentColor}" />
+</ResourceDictionary>
+
+

@@ -1,0 +1,14 @@
+       KANTAR FISI
+
+
+ PLAKA : @PLATE@   
+ GIRIS : @DATE@
+ CIKIS : @SECDATE@
+ ALICI : @CUSTOMER@   
+ SATICI: @VENDOR@   
+ URUN  : @PRODUCT@   
+
+
+ 1. TARTIM : @WEIGHT@ KG
+ 2. TARTIM : @SECWEIGHT@ KG
+ NET       : @TOTAL@ KG

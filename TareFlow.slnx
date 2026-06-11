@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TareFlow.Agent/TareFlow.Agent.csproj" />
+    <Project Path="src/TareFlow.Center/TareFlow.Center.csproj" />
+    <Project Path="src/TareFlow.Core/TareFlow.Core.csproj" />
+  </Folder>
+</Solution>

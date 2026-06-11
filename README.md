@@ -1,28 +1,57 @@
-# 🧾 TareFlow - Weight Tracking Automation System
+# 🧾 TareFlow — Uzaktan Tır Kantarı Otomasyonu
 
-**TareFlow** is a lightweight and effective truck scale software designed to communicate with industrial weighing scales via serial ports (COM or LPT). It reads weight data in real-time with detailed features such as adding records, deleting, and filtering by date.
+**TareFlow**, tır/araç tartım işlemlerini **uzaktan** yapıp kaydeden bir kantar otomasyon sistemidir. Kantar tarafındaki COM portlu indikatör ile IP kamera, merkez tarafındaki operatöre ağ üzerinden taşınır; tüm tartım, kayıt ve fiş işlemleri merkezden yürütülür.
 
-## 🚀 Features
+> Eski sürüm (.NET Framework 4.7.2 / WinForms, tek makine) `legacy/` klasöründe arşivlenmiştir.
 
-- ✅ Detailed record adding, deleting, and filtering database features (SQLite).
-- ✅ Real-time weight reading from RS232 (COM) Serial Port.
-- ✅ Direct printing through LPT (ASCII-compliant print output).
-- ✅ Backward compatibility is supported with a CSV import option.
+## 🏗️ Mimari
 
-## ⚙️ Requirements
+İki fiziksel taraf, aynı ağa (PTP menzil genişletici) bağlıdır:
 
-- Windows 7 or newer
-- .NET Framework 4.7.2 or later
-- Serial port access (COM or LPT1)
+```
+KANTAR TARAFI                                  MERKEZ TARAFI
+┌───────────────────────────┐                 ┌──────────────────────────────┐
+│ COM indikatör → Agent ─────┼── TCP 9100 ────▶│ TareFlow.Center (WPF)        │
+│ IP kamera (192.168.1.7) ───┼── RTSP ────────▶│  • canlı ağırlık + kamera     │
+└───────────────────────────┘                 │  • SQLite kayıt               │
+                                               │  • 80mm USB termal fiş        │
+                                               └──────────────────────────────┘
+```
 
-## ⚙️ Tested Devices
+| Proje | Hedef | Açıklama |
+|-------|-------|----------|
+| `TareFlow.Core` | net10.0 | Paylaşılan modeller, seri ayrıştırma (`ScaleParser`), TCP protokolü (`ScaleProtocol`), metin yardımcıları |
+| `TareFlow.Agent` | net10.0-windows (WPF) | **Kantar PC'sinde** çalışır: COM portunu okuyup TCP ile merkeze yayınlar |
+| `TareFlow.Center` | net10.0-windows (WPF, MVVM) | **Merkez** ana uygulaması: tartım, kamera, kayıt, tahsilat, fiş |
 
-- Tested only with the Bassan BX-1 & Epson LX-300+ weighing indicator/printer combination.
+## 🚀 Özellikler
 
-## 👨‍💻 Developer
+- ✅ COM indikatör verisinin TCP ile **uzaktan** dinlenmesi (otomatik yeniden bağlanma)
+- ✅ TTEC/RTSP **IP kamera** canlı görüntüsü (LibVLCSharp, düşük gecikme) + tartım anı snapshot
+- ✅ İki aşamalı tartım (1. giriş / 2. çıkış), `Net = |1.tartım − 2.tartım|`
+- ✅ SQLite kayıt, filtreleme, silme; araç tipine göre kantar ücreti ve tahsilat takibi
+- ✅ **80mm USB termal fiş** (ESC/POS) — LPT desteği kaldırıldı
+- ✅ CSV içe aktarma
 
-**furkan (@furkancakmak34x)**
+## ⚙️ Gereksinimler
 
-- 📧 [Mail](mailto:furkancakmak34x@gmail.com)
-- 🌐 [GitHub](https://www.github.com/furkancakmak34x)
-- 💬 [Telegram](https://t.me/furkancakmak34x)
+- Windows 10/11
+- .NET 10 SDK
+- Kantar tarafı: COM portlu indikatör + IP kamera, bir Windows PC
+- Merkez tarafı: 80mm USB ESC/POS termal yazıcı (opsiyonel)
+
+## ▶️ Çalıştırma
+
+```powershell
+# Kantar PC'sinde
+dotnet run --project src/TareFlow.Agent
+
+# Merkez PC'sinde
+dotnet run --project src/TareFlow.Center
+```
+
+Merkezde **Ayarlar**'dan kantar IP'si, port, kamera RTSP adresi/şifresi ve termal yazıcı seçilir.
+
+## 👨‍💻 Geliştirici
+
+**furkan (@furkancakmak34x)** — [Mail](mailto:furkancakmak34x@gmail.com) · [GitHub](https://www.github.com/furkancakmak34x) · [Telegram](https://t.me/furkancakmak34x)
