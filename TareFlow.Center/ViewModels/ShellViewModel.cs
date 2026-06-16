@@ -6,8 +6,7 @@ namespace TareFlow.Center.ViewModels;
 
 public sealed partial class ShellViewModel : ObservableObject
 {
-    private readonly WeighViewModel _weigh;
-    private readonly SecondWeighViewModel _secondWeigh;
+    private readonly WeighStationViewModel _station;
     private readonly RecordsViewModel _records;
     private readonly ReceivableViewModel _receivable;
     private readonly SettingsViewModel _settings;
@@ -29,15 +28,13 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public ShellViewModel(
         ScaleClient scale,
-        WeighViewModel weigh,
-        SecondWeighViewModel secondWeigh,
+        WeighStationViewModel station,
         RecordsViewModel records,
         ReceivableViewModel receivable,
         SettingsViewModel settings)
     {
         Scale = scale;
-        _weigh = weigh;
-        _secondWeigh = secondWeigh;
+        _station = station;
         _records = records;
         _receivable = receivable;
         _settings = settings;
@@ -54,8 +51,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     [RelayCommand] private void GoHome() => IsHome = true;
 
-    [RelayCommand] private void ShowWeigh() => Navigate(_weigh, "weigh", "1. Tartım");
-    [RelayCommand] private void ShowSecondWeigh() => Navigate(_secondWeigh, "second", "2. Tartım");
+    [RelayCommand] private void ShowStation() => Navigate(_station, "station", "Tartım");
     [RelayCommand] private void ShowRecords() => Navigate(_records, "records", "Kayıtlar");
     [RelayCommand] private void ShowReceivable() => Navigate(_receivable, "receivable", "Tahsilat");
     [RelayCommand] private void ShowSettings() => Navigate(_settings, "settings", "Ayarlar");

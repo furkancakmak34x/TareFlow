@@ -35,13 +35,30 @@ public sealed class SecWeightRecord
     public string? Product { get; set; }
 }
 
-/// <summary>Tahsilat kaydı (Receivable tablosu).</summary>
+/// <summary>Tahsilat kaydı (Receivable tablosu). Borç müşteri/cari adına tutulur.</summary>
 public sealed class ReceivableRecord
 {
     public long Id { get; set; }
+    public string Customer { get; set; } = "";
     public string Plate { get; set; } = "";
     public string Date { get; set; } = "";
     public int Fee { get; set; }
+}
+
+/// <summary>Bir müşterinin (cari) toplam bekleyen borcu — tahsilat ekranında gruplama için.</summary>
+public sealed class CustomerDebt
+{
+    public string Customer { get; set; } = "";
+    public int Count { get; set; }
+    public int Total { get; set; }
+}
+
+/// <summary>Plaka bazlı sabit dara (boş ağırlık) kaydı (Tare tablosu).</summary>
+public sealed class TareRecord
+{
+    public string Plate { get; set; } = "";
+    public int Weight { get; set; }
+    public string UpdatedDate { get; set; } = "";
 }
 
 /// <summary>Araç tipi (kantar ücreti için).</summary>

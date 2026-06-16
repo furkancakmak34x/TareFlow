@@ -24,11 +24,13 @@ public partial class App : Application
 
         var weigh = new WeighViewModel(repo, scale, camera);
         var second = new SecondWeighViewModel(repo, scale, camera, printer);
+        var tare = new TareWeighViewModel(repo, scale, camera, printer);
+        var station = new WeighStationViewModel(weigh, second, tare, scale, camera);
         var records = new RecordsViewModel(repo);
         var receivable = new ReceivableViewModel(repo);
         var settingsVm = new SettingsViewModel(settings, repo, scale, camera);
 
-        var shell = new ShellViewModel(scale, weigh, second, records, receivable, settingsVm);
+        var shell = new ShellViewModel(scale, station, records, receivable, settingsVm);
 
         scale.Start();
 

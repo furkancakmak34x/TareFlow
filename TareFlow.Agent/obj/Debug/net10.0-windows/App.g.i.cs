@@ -59,7 +59,7 @@ namespace TareFlow.Agent {
             
             #line default
             #line hidden
-            System.Uri resourceLocater = new System.Uri("/TareFlow.Agent;V1.0.0.0;component/app.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/TareFlow.Agent;component/app.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\App.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

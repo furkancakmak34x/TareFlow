@@ -12,7 +12,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Başlık -->
+        
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Border Width="44" Height="44" CornerRadius="12" Background="{DynamicResource PrimaryBrush}">
                 <TextBlock Text="&#xE2C7;" FontFamily="{StaticResource GoogleMaterialSymbols}" FontSize="26"
@@ -27,7 +27,7 @@
             </StackPanel>
         </StackPanel>
 
-        <!-- Ayarlar kartı -->
+        
         <Border Grid.Row="1" Margin="0,18,0,0" Padding="18" CornerRadius="14"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
             <Grid>
@@ -63,7 +63,7 @@
             </Grid>
         </Border>
 
-        <!-- Kontrol + durum -->
+        
         <Grid Grid.Row="2" Margin="0,16,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -83,7 +83,7 @@
             </StackPanel>
         </Grid>
 
-        <!-- Log -->
+        
         <Border Grid.Row="3" Margin="0,14,0,0" CornerRadius="12"
                 Background="{DynamicResource SurfaceVariantBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
             <ScrollViewer x:Name="logScroll" VerticalScrollBarVisibility="Auto" Padding="12">

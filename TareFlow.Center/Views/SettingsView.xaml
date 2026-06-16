@@ -12,7 +12,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Kantar + yazıcı -->
+                
                 <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" CornerRadius="14"
                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="22">
                     <StackPanel>
@@ -26,17 +26,36 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Kamera -->
+                
                 <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" CornerRadius="14"
                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="22">
                     <StackPanel>
-                        <TextBlock Text="IP Kamera" FontSize="16" FontFamily="{StaticResource GoogleSansBold}" Margin="0,0,0,12"/>
-                        <TextBlock Text="RTSP Adresi" Style="{StaticResource DialogLabel}"/>
-                        <TextBox Text="{Binding RtspUrl}" Margin="0,0,0,12"/>
-                        <TextBlock Text="Kullanıcı Adı" Style="{StaticResource DialogLabel}"/>
-                        <TextBox Text="{Binding CameraUser}" Margin="0,0,0,12"/>
-                        <TextBlock Text="Şifre" Style="{StaticResource DialogLabel}"/>
-                        <TextBox Text="{Binding CameraPassword}"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="IP Kameralar" FontSize="16"
+                                       FontFamily="{StaticResource GoogleSansBold}" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Ekle" Command="{Binding AddCameraCommand}"
+                                    Width="70" Height="32" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"/>
+                            <Button Grid.Column="2" Content="Sil" Command="{Binding RemoveCameraCommand}"
+                                    Width="60" Height="32" Style="{StaticResource DangerButton}"/>
+                        </Grid>
+                        <TextBlock Text="Birden fazla kamera tanımlayabilirsiniz. Tartım ekranında aralarında geçiş yapılır."
+                                   Style="{StaticResource DialogLabel}" TextWrapping="Wrap"/>
+                        <DataGrid ItemsSource="{Binding Cameras}" SelectedItem="{Binding SelectedCamera}"
+                                  AutoGenerateColumns="False" CanUserAddRows="False" BorderThickness="0"
+                                  Background="Transparent" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal" RowHeight="34" FontSize="13" MinHeight="160">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="İsim" Binding="{Binding Name}" Width="90"/>
+                                <DataGridTextColumn Header="RTSP Adresi" Binding="{Binding RtspUrl}" Width="*"/>
+                                <DataGridTextColumn Header="Kullanıcı" Binding="{Binding User}" Width="90"/>
+                                <DataGridTextColumn Header="Şifre" Binding="{Binding Password}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </StackPanel>
                 </Border>
             </Grid>

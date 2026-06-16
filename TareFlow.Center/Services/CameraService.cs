@@ -34,12 +34,22 @@ public sealed class CameraService : IDisposable
     private int _stride;
     private readonly object _gate = new();
     private bool _disposed;
+    private int _activeCamera;
 
     /// <summary>Tüm görünümlerin Image.Source olarak paylaştığı canlı kare.</summary>
     public WriteableBitmap? Frame { get; private set; }
 
     /// <summary>Kare (yeniden) oluşturulduğunda tetiklenir (boyut belli olunca).</summary>
     public event Action? FrameReady;
+
+    /// <summary>Aktif kamera değişince tetiklenir (UI'da seçili kamerayı vurgulamak için).</summary>
+    public event Action? ActiveCameraChanged;
+
+    /// <summary>Tanımlı kameralar (ayarlardan).</summary>
+    public IReadOnlyList<CameraConfig> Cameras => _settings.Cameras;
+
+    /// <summary>Şu an yayını yapılan kameranın listedeki indeksi.</summary>
+    public int ActiveCamera => _activeCamera;
 
     public CameraService(CenterSettings settings) => _settings = settings;
 
@@ -82,15 +92,40 @@ public sealed class CameraService : IDisposable
             Start();
             return;
         }
+        // Aktif indeks artık geçersizse başa sar.
+        if (_activeCamera >= _settings.Cameras.Count)
+            _activeCamera = 0;
         try { _player.Stop(); } catch { }
         Play();
+    }
+
+    /// <summary>Belirtilen kameraya geçiş yapar ve yayını yeniden başlatır.</summary>
+    public void SwitchTo(int index)
+    {
+        if (index < 0 || index >= _settings.Cameras.Count)
+            return;
+        if (index == _activeCamera && _player is not null)
+            return;
+        _activeCamera = index;
+        if (_player is null)
+        {
+            Start();
+        }
+        else
+        {
+            try { _player.Stop(); } catch { }
+            Play();
+        }
+        ActiveCameraChanged?.Invoke();
     }
 
     private void Play()
     {
         if (_libVlc is null || _player is null)
             return;
-        var media = new Media(_libVlc, new Uri(_settings.BuildRtspUrl()));
+        if (_activeCamera < 0 || _activeCamera >= _settings.Cameras.Count)
+            return;
+        var media = new Media(_libVlc, new Uri(_settings.Cameras[_activeCamera].BuildRtspUrl()));
         media.AddOption(":network-caching=100");
         media.AddOption(":live-caching=100");
         _player.Play(media);

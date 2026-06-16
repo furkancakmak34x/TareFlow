@@ -9,7 +9,7 @@
             <ColumnDefinition Width="380"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Bekleyen araçlar -->
+        
         <DockPanel Grid.Column="0" Margin="0,0,20,0">
             <TextBlock DockPanel.Dock="Top" Text="Bekleyen Araçlar" FontSize="16"
                        FontFamily="{StaticResource GoogleSansBold}" Margin="0,0,0,12"/>
@@ -56,7 +56,7 @@
             </Border>
         </DockPanel>
 
-        <!-- Kamera -->
+        
         <DockPanel Grid.Column="1" Margin="0,0,20,0">
             <TextBlock DockPanel.Dock="Top" Text="Aracın çıkış tartısı — canlı kamera"
                        FontFamily="{StaticResource GoogleSansMedium}"
@@ -66,7 +66,7 @@
             </Border>
         </DockPanel>
 
-        <!-- Form -->
+        
         <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" CornerRadius="16"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="26">
             <StackPanel>

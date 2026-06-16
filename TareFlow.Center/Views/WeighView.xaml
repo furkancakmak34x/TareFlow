@@ -8,7 +8,7 @@
             <ColumnDefinition Width="400"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Kamera -->
+        
         <DockPanel Grid.Column="0" Margin="0,0,24,0">
             <TextBlock DockPanel.Dock="Top" Text="Aracın giriş tartısı — canlı kamera"
                        FontFamily="{StaticResource GoogleSansMedium}"
@@ -18,7 +18,7 @@
             </Border>
         </DockPanel>
 
-        <!-- Form -->
+        
         <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="16"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="26">
             <StackPanel>

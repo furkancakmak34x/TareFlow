@@ -175,7 +175,7 @@
     </Style>
 
     <Style x:Key="ModernTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-        <!-- Already updated the base style to be modern -->
+        
     </Style>
 
     <Style x:Key="DialogLabel" TargetType="TextBlock">

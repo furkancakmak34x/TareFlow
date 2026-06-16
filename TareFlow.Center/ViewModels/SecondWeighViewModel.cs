@@ -112,7 +112,8 @@ public sealed partial class SecondWeighViewModel : ObservableObject, IActivatabl
             if (!IsPaid)
             {
                 int fee = _repo.GetFee(IsVan ? VehicleType.Van : VehicleType.Truck);
-                _repo.AddReceivable(rec.Plate, rec.Date, fee);
+                string account = string.IsNullOrWhiteSpace(rec.Customer) ? rec.Plate : rec.Customer!;
+                _repo.AddReceivable(account, rec.Plate, rec.SecDate, fee);
             }
 
             if (ShouldPrint)

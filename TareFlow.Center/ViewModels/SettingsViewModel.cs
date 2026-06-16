@@ -20,12 +20,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
 
     [ObservableProperty] private string _agentHost;
     [ObservableProperty] private int _agentPort;
-    [ObservableProperty] private string _rtspUrl;
-    [ObservableProperty] private string _cameraUser;
-    [ObservableProperty] private string _cameraPassword;
     [ObservableProperty] private string _printerName;
 
+    [ObservableProperty] private CameraConfig? _selectedCamera;
+
     public ObservableCollection<string> Printers { get; } = new();
+
+    /// <summary>Düzenlenebilir kamera listesi.</summary>
+    public ObservableCollection<CameraConfig> Cameras { get; } = new();
 
     public SettingsViewModel(CenterSettings settings, WeighRepository repo, ScaleClient scale, CameraService camera)
     {
@@ -36,10 +38,40 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
 
         _agentHost = settings.AgentHost;
         _agentPort = settings.AgentPort;
-        _rtspUrl = settings.RtspUrl;
-        _cameraUser = settings.CameraUser;
-        _cameraPassword = settings.CameraPassword;
         _printerName = settings.PrinterName;
+
+        foreach (var c in settings.Cameras)
+            Cameras.Add(c);
+        SelectedCamera = Cameras.FirstOrDefault();
+    }
+
+    [RelayCommand]
+    private void AddCamera()
+    {
+        var cam = new CameraConfig
+        {
+            Name = $"Kamera {Cameras.Count + 1}",
+            RtspUrl = "rtsp://192.168.1.190:3050/1/1?transmode=unicast&profile=va",
+            User = "admin",
+            Password = ""
+        };
+        Cameras.Add(cam);
+        SelectedCamera = cam;
+    }
+
+    [RelayCommand]
+    private void RemoveCamera()
+    {
+        if (SelectedCamera is null)
+            return;
+        if (Cameras.Count <= 1)
+        {
+            MessageBox.Show("En az bir kamera tanımlı kalmalı.", "Kamera",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        Cameras.Remove(SelectedCamera);
+        SelectedCamera = Cameras.FirstOrDefault();
     }
 
     public void OnActivated()
@@ -59,10 +91,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
     {
         _settings.AgentHost = AgentHost.Trim();
         _settings.AgentPort = AgentPort;
-        _settings.RtspUrl = RtspUrl.Trim();
-        _settings.CameraUser = CameraUser.Trim();
-        _settings.CameraPassword = CameraPassword;
         _settings.PrinterName = PrinterName ?? "";
+        _settings.Cameras = Cameras.ToList();
+        // Eski tek-kamera alanları artık kullanılmıyor; temizle.
+        _settings.RtspUrl = _settings.CameraUser = _settings.CameraPassword = "";
         _settings.Save();
 
         // Bağlantıları yeni ayarlarla yeniden başlat.

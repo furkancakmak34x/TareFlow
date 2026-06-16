@@ -55,8 +55,37 @@ public sealed class WeighRepository
                 Plate TEXT NOT NULL, Date TEXT NOT NULL, Fee INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS Fee (
                 Type TEXT NOT NULL, WeightFee INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS Tare (
+                Plate TEXT NOT NULL PRIMARY KEY,
+                Weight INTEGER NOT NULL, UpdatedDate TEXT NOT NULL);
             """;
         cmd.ExecuteNonQuery();
+
+        // Migrasyon: Receivable tablosuna Customer kolonu yoksa ekle.
+        if (!ColumnExists(conn, "Receivable", "Customer"))
+        {
+            using var alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE Receivable ADD COLUMN Customer TEXT";
+            alter.ExecuteNonQuery();
+
+            // Eski kayıtlarda müşteri yoktu; cari olarak plakayı kullan.
+            using var fill = conn.CreateCommand();
+            fill.CommandText = "UPDATE Receivable SET Customer = Plate WHERE Customer IS NULL OR Customer = ''";
+            fill.ExecuteNonQuery();
+        }
+    }
+
+    private static bool ColumnExists(SqliteConnection conn, string table, string column)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"PRAGMA table_info({table})";
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            if (string.Equals(r.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     // --- Weight (1. tartım) ---
@@ -182,6 +211,7 @@ public sealed class WeighRepository
             list.Add(new ReceivableRecord
             {
                 Id = r.GetInt64(r.GetOrdinal("Id")),
+                Customer = Str(r, "Customer"),
                 Plate = Str(r, "Plate"),
                 Date = Str(r, "Date"),
                 Fee = r.GetInt32(r.GetOrdinal("Fee"))
@@ -190,11 +220,65 @@ public sealed class WeighRepository
         return list;
     }
 
-    public void AddReceivable(string plate, string date, int fee)
+    /// <summary>Müşteri (cari) bazında toplam bekleyen borçları döner.</summary>
+    public List<CustomerDebt> ListCustomerDebts()
     {
         using var conn = Open();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "INSERT INTO Receivable (Plate, Date, Fee) VALUES ($plate, $date, $fee)";
+        cmd.CommandText = """
+            SELECT COALESCE(NULLIF(Customer, ''), Plate) AS Acc,
+                   COUNT(*) AS Cnt, SUM(Fee) AS Tot
+            FROM Receivable
+            GROUP BY Acc
+            ORDER BY Tot DESC
+            """;
+        using var r = cmd.ExecuteReader();
+        var list = new List<CustomerDebt>();
+        while (r.Read())
+        {
+            list.Add(new CustomerDebt
+            {
+                Customer = r.IsDBNull(0) ? "" : r.GetString(0),
+                Count = r.GetInt32(1),
+                Total = r.IsDBNull(2) ? 0 : r.GetInt32(2)
+            });
+        }
+        return list;
+    }
+
+    /// <summary>Belirli bir müşterinin (cari) bekleyen borç kalemlerini döner.</summary>
+    public List<ReceivableRecord> ListReceivableByCustomer(string customer)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT * FROM Receivable
+            WHERE COALESCE(NULLIF(Customer, ''), Plate) = $cust
+            ORDER BY Date DESC
+            """;
+        cmd.Parameters.AddWithValue("$cust", customer);
+        using var r = cmd.ExecuteReader();
+        var list = new List<ReceivableRecord>();
+        while (r.Read())
+        {
+            list.Add(new ReceivableRecord
+            {
+                Id = r.GetInt64(r.GetOrdinal("Id")),
+                Customer = Str(r, "Customer"),
+                Plate = Str(r, "Plate"),
+                Date = Str(r, "Date"),
+                Fee = r.GetInt32(r.GetOrdinal("Fee"))
+            });
+        }
+        return list;
+    }
+
+    public void AddReceivable(string customer, string plate, string date, int fee)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "INSERT INTO Receivable (Customer, Plate, Date, Fee) VALUES ($customer, $plate, $date, $fee)";
+        cmd.Parameters.AddWithValue("$customer", string.IsNullOrWhiteSpace(customer) ? plate : customer);
         cmd.Parameters.AddWithValue("$plate", plate);
         cmd.Parameters.AddWithValue("$date", date);
         cmd.Parameters.AddWithValue("$fee", fee);
@@ -207,6 +291,79 @@ public sealed class WeighRepository
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "DELETE FROM Receivable WHERE Id = $id";
         cmd.Parameters.AddWithValue("$id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>Bir müşterinin (cari) tüm bekleyen borçlarını tahsil edildi olarak siler.</summary>
+    public void DeleteReceivablesByCustomer(string customer)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM Receivable WHERE COALESCE(NULLIF(Customer, ''), Plate) = $cust";
+        cmd.Parameters.AddWithValue("$cust", customer);
+        cmd.ExecuteNonQuery();
+    }
+
+    // --- Tare (sabit dara / plaka bazlı boş ağırlık) ---
+
+    public List<TareRecord> ListTare()
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT * FROM Tare ORDER BY Plate";
+        using var r = cmd.ExecuteReader();
+        var list = new List<TareRecord>();
+        while (r.Read())
+        {
+            list.Add(new TareRecord
+            {
+                Plate = Str(r, "Plate"),
+                Weight = r.GetInt32(r.GetOrdinal("Weight")),
+                UpdatedDate = Str(r, "UpdatedDate")
+            });
+        }
+        return list;
+    }
+
+    /// <summary>Plakanın kayıtlı darasını döner; yoksa null.</summary>
+    public TareRecord? GetTare(string plate)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT * FROM Tare WHERE Plate = $plate LIMIT 1";
+        cmd.Parameters.AddWithValue("$plate", plate);
+        using var r = cmd.ExecuteReader();
+        if (!r.Read())
+            return null;
+        return new TareRecord
+        {
+            Plate = Str(r, "Plate"),
+            Weight = r.GetInt32(r.GetOrdinal("Weight")),
+            UpdatedDate = Str(r, "UpdatedDate")
+        };
+    }
+
+    /// <summary>Plakanın darasını ekler/günceller (upsert).</summary>
+    public void UpsertTare(string plate, int weight, string updatedDate)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO Tare (Plate, Weight, UpdatedDate) VALUES ($plate, $weight, $date)
+            ON CONFLICT(Plate) DO UPDATE SET Weight = $weight, UpdatedDate = $date
+            """;
+        cmd.Parameters.AddWithValue("$plate", plate);
+        cmd.Parameters.AddWithValue("$weight", weight);
+        cmd.Parameters.AddWithValue("$date", updatedDate);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void DeleteTare(string plate)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM Tare WHERE Plate = $plate";
+        cmd.Parameters.AddWithValue("$plate", plate);
         cmd.ExecuteNonQuery();
     }
 

@@ -7,10 +7,10 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Tahsilat" FontSize="26"
+            <TextBlock Grid.Column="0" Text="Tahsilat (Müşteri Bazlı)" FontSize="26"
                        FontFamily="{StaticResource GoogleSansBold}" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="Tahsil Et" Command="{Binding CollectCommand}"
-                    Width="130" Style="{StaticResource PrimaryButton}"/>
+            <Button Grid.Column="1" Content="Müşteriyi Tahsil Et" Command="{Binding CollectCustomerCommand}"
+                    Width="190" Style="{StaticResource PrimaryButton}"/>
         </Grid>
 
         <Border DockPanel.Dock="Bottom" Background="{DynamicResource WarningSoftBrush}" CornerRadius="12"
@@ -22,18 +22,94 @@
             </TextBlock>
         </Border>
 
-        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14"
-                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="2">
-            <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
-                      AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
-                      Background="Transparent" HeadersVisibility="Column"
-                      GridLinesVisibility="Horizontal" RowHeight="36" FontSize="14">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Plaka" Binding="{Binding Plate}" Width="180"/>
-                    <DataGridTextColumn Header="Tarih" Binding="{Binding Date}" Width="220"/>
-                    <DataGridTextColumn Header="Ücret (₺)" Binding="{Binding Fee}" Width="*"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            
+            <DockPanel Grid.Column="0" Margin="0,0,18,0">
+                <TextBlock DockPanel.Dock="Top" Text="Müşteriler" FontSize="15"
+                           FontFamily="{StaticResource GoogleSansBold}" Margin="0,0,0,10"/>
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="6">
+                    <ListBox ItemsSource="{Binding Customers}" SelectedItem="{Binding Selected}"
+                             Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,2"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="Transparent" CornerRadius="10" Padding="12,10">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverOverlayBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource OnPrimaryBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding Customer}" FontFamily="{StaticResource GoogleSansBold}" FontSize="15"/>
+                                        <TextBlock FontSize="11" Opacity="0.8">
+                                            <Run Text="{Binding Count, Mode=OneWay}"/><Run Text=" kalem"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" FontFamily="{StaticResource GoogleSansBold}" FontSize="15">
+                                        <Run Text="{Binding Total, Mode=OneWay}"/><Run Text=" ₺"/>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </DockPanel>
+
+            
+            <DockPanel Grid.Column="1">
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding SelectedCustomerName}" FontSize="18"
+                               FontFamily="{StaticResource GoogleSansBold}" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="Kalemi Tahsil Et" Command="{Binding CollectRecordCommand}"
+                            Width="150" Height="36" Style="{StaticResource SecondaryButton}"/>
+                </Grid>
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="2">
+                    <DataGrid ItemsSource="{Binding Details}" SelectedItem="{Binding SelectedDetail}"
+                              AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                              Background="Transparent" HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal" RowHeight="36" FontSize="14">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Plaka" Binding="{Binding Plate}" Width="160"/>
+                            <DataGridTextColumn Header="Tarih" Binding="{Binding Date}" Width="220"/>
+                            <DataGridTextColumn Header="Ücret (₺)" Binding="{Binding Fee}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </DockPanel>
+        </Grid>
     </DockPanel>
 </UserControl>

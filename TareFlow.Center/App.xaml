@@ -18,12 +18,9 @@
             <FontFamily x:Key="GoogleSansItalic">pack://application:,,,/Resources/#Google Sans Flex Italic</FontFamily>
             <FontFamily x:Key="GoogleMaterialSymbols">pack://application:,,,/Resources/#Material Symbols Rounded</FontFamily>
 
-            <!-- ViewModel -> View eşlemesi -->
-            <DataTemplate DataType="{x:Type vm:WeighViewModel}">
-                <views:WeighView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:SecondWeighViewModel}">
-                <views:SecondWeighView/>
+            
+            <DataTemplate DataType="{x:Type vm:WeighStationViewModel}">
+                <views:WeighStationView/>
             </DataTemplate>
             <DataTemplate DataType="{x:Type vm:RecordsViewModel}">
                 <views:RecordsView/>
