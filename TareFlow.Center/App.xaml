@@ -1,0 +1,39 @@
+<Application x:Class="TareFlow.Center.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:TareFlow.Center.ViewModels"
+             xmlns:views="clr-namespace:TareFlow.Center.Views">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Themes/Colors.Slate.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Themes/Theme.Base.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Themes/Theme.Brushes.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <FontFamily x:Key="GoogleSans">pack://application:,,,/Resources/#Google Sans Flex SemiBold</FontFamily>
+            <FontFamily x:Key="GoogleSansSemiBold">pack://application:,,,/Resources/#Google Sans Flex SemiBold</FontFamily>
+            <FontFamily x:Key="GoogleSansMedium">pack://application:,,,/Resources/#Google Sans Flex Medium</FontFamily>
+            <FontFamily x:Key="GoogleSansBold">pack://application:,,,/Resources/#Google Sans Flex Bold</FontFamily>
+            <FontFamily x:Key="GoogleSansItalic">pack://application:,,,/Resources/#Google Sans Flex Italic</FontFamily>
+            <FontFamily x:Key="GoogleMaterialSymbols">pack://application:,,,/Resources/#Material Symbols Rounded</FontFamily>
+
+            <!-- ViewModel -> View eşlemesi -->
+            <DataTemplate DataType="{x:Type vm:WeighViewModel}">
+                <views:WeighView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SecondWeighViewModel}">
+                <views:SecondWeighView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:RecordsViewModel}">
+                <views:RecordsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ReceivableViewModel}">
+                <views:ReceivableView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsView/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
