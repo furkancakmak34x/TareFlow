@@ -17,10 +17,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
     private readonly WeighRepository _repo;
     private readonly ScaleClient _scale;
     private readonly CameraService _camera;
+    private readonly PtzService _ptz;
 
     [ObservableProperty] private string _agentHost;
     [ObservableProperty] private int _agentPort;
     [ObservableProperty] private string _printerName;
+
+    /// <summary>0: 80mm Termal (ESC/POS), 1: Nokta Vuruşlu (ESC/P, USB).</summary>
+    [ObservableProperty] private int _printerKindIndex;
 
     [ObservableProperty] private CameraConfig? _selectedCamera;
 
@@ -29,16 +33,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
     /// <summary>Düzenlenebilir kamera listesi.</summary>
     public ObservableCollection<CameraConfig> Cameras { get; } = new();
 
-    public SettingsViewModel(CenterSettings settings, WeighRepository repo, ScaleClient scale, CameraService camera)
+    public SettingsViewModel(CenterSettings settings, WeighRepository repo, ScaleClient scale, CameraService camera, PtzService ptz)
     {
         _settings = settings;
         _repo = repo;
         _scale = scale;
         _camera = camera;
+        _ptz = ptz;
 
         _agentHost = settings.AgentHost;
         _agentPort = settings.AgentPort;
         _printerName = settings.PrinterName;
+        _printerKindIndex = settings.PrinterKind == PrinterKind.DotMatrix ? 1 : 0;
 
         foreach (var c in settings.Cameras)
             Cameras.Add(c);
@@ -57,6 +63,24 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
         };
         Cameras.Add(cam);
         SelectedCamera = cam;
+    }
+
+    /// <summary>Seçili kameranın gerçek RTSP adresini ONVIF üzerinden çekip doldurur.</summary>
+    [RelayCommand]
+    private async Task FetchRtspAsync()
+    {
+        if (SelectedCamera is null)
+            return;
+        string? uri = await _ptz.GetStreamUriAsync(SelectedCamera);
+        if (string.IsNullOrWhiteSpace(uri))
+        {
+            MessageBox.Show("ONVIF üzerinden RTSP adresi alınamadı. ONVIF portu, kullanıcı adı ve şifreyi kontrol edin.",
+                "RTSP", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        SelectedCamera.RtspUrl = uri;
+        MessageBox.Show("RTSP adresi ONVIF'ten alındı:\n" + uri + "\n\n'Kaydet ve Uygula' ile etkinleştirin.",
+            "RTSP", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     [RelayCommand]
@@ -92,18 +116,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
         _settings.AgentHost = AgentHost.Trim();
         _settings.AgentPort = AgentPort;
         _settings.PrinterName = PrinterName ?? "";
+        _settings.PrinterKind = PrinterKindIndex == 1 ? PrinterKind.DotMatrix : PrinterKind.Thermal80;
         _settings.Cameras = Cameras.ToList();
         // Eski tek-kamera alanları artık kullanılmıyor; temizle.
         _settings.RtspUrl = _settings.CameraUser = _settings.CameraPassword = "";
         _settings.Save();
 
-        // Bağlantıları yeni ayarlarla yeniden başlat.
+        // Bağlantıları yeni ayarlarla yenile.
         _scale.Stop();
         _scale.Start();
-        _camera.Restart();
-
-        MessageBox.Show("Ayarlar kaydedildi ve bağlantılar yenilendi.", "Ayarlar",
-            MessageBoxButton.OK, MessageBoxImage.Information);
+        // Kamera ayarları tartım ekranına dönüldüğünde (VideoView bağlanınca) uygulanır.
+        _camera.Stop();
     }
 
     [RelayCommand]
@@ -136,8 +159,5 @@ public sealed partial class SettingsViewModel : ObservableObject, IActivatable
             }
             catch { failed++; }
         }
-
-        MessageBox.Show($"CSV aktarımı tamamlandı.\nBaşarılı: {imported}, Hatalı: {failed}",
-            "CSV Aktarma", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }

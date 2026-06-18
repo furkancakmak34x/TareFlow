@@ -7,9 +7,9 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Tahsilat (Müşteri Bazlı)" FontSize="26"
+            <TextBlock Grid.Column="0" Text="Tahsilat" FontSize="26"
                        FontFamily="{StaticResource GoogleSansBold}" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="Müşteriyi Tahsil Et" Command="{Binding CollectCustomerCommand}"
+            <Button Grid.Column="1" Content="Borcu Kapat" Command="{Binding CollectCustomerCommand}"
                     Width="190" Style="{StaticResource PrimaryButton}"/>
         </Grid>
 
@@ -93,7 +93,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="{Binding SelectedCustomerName}" FontSize="18"
                                FontFamily="{StaticResource GoogleSansBold}" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Content="Kalemi Tahsil Et" Command="{Binding CollectRecordCommand}"
+                    <Button Grid.Column="1" Content="Ödeme Al" Command="{Binding CollectCustomerCommand}"
                             Width="150" Height="36" Style="{StaticResource SecondaryButton}"/>
                 </Grid>
                 <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14"

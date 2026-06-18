@@ -84,7 +84,7 @@ public sealed partial class ScaleClient : ObservableObject, IDisposable
         if (app is null)
             action();
         else
-            app.Dispatcher.Invoke(action);
+            app.Dispatcher.BeginInvoke(action);
     }
 
     public void Dispose() => Stop();

@@ -11,15 +11,24 @@ namespace TareFlow.Center.ViewModels;
 public sealed partial class RecordsViewModel : ObservableObject, IActivatable
 {
     private readonly WeighRepository _repo;
+    private readonly ReceiptPrinter _printer;
     private List<SecWeightRecord> _all = new();
 
     public ObservableCollection<SecWeightRecord> Items { get; } = new();
 
     [ObservableProperty] private SecWeightRecord? _selected;
 
-    [ObservableProperty] private string _filter = "";
+    [ObservableProperty] private string _filterPlate = "";
+    [ObservableProperty] private string _filterCustomer = "";
+    [ObservableProperty] private string _filterVendor = "";
+    [ObservableProperty] private DateTime? _filterStartDate;
+    [ObservableProperty] private DateTime? _filterEndDate;
 
-    public RecordsViewModel(WeighRepository repo) => _repo = repo;
+    public RecordsViewModel(WeighRepository repo, ReceiptPrinter printer)
+    {
+        _repo = repo;
+        _printer = printer;
+    }
 
     public void OnActivated()
     {
@@ -27,20 +36,68 @@ public sealed partial class RecordsViewModel : ObservableObject, IActivatable
         ApplyFilter();
     }
 
-    partial void OnFilterChanged(string value) => ApplyFilter();
+    partial void OnFilterPlateChanged(string value) => ApplyFilter();
+    partial void OnFilterCustomerChanged(string value) => ApplyFilter();
+    partial void OnFilterVendorChanged(string value) => ApplyFilter();
+    partial void OnFilterStartDateChanged(DateTime? value) => ApplyFilter();
+    partial void OnFilterEndDateChanged(DateTime? value) => ApplyFilter();
 
     private void ApplyFilter()
     {
         Items.Clear();
         IEnumerable<SecWeightRecord> q = _all;
-        if (!string.IsNullOrWhiteSpace(Filter))
+
+        if (!string.IsNullOrWhiteSpace(FilterPlate))
         {
-            string f = Filter.Trim();
-            q = q.Where(x => x.Plate.Contains(f, StringComparison.OrdinalIgnoreCase)
-                          || x.Date.Contains(f, StringComparison.OrdinalIgnoreCase));
+            string f = FilterPlate.Trim();
+            q = q.Where(x => x.Plate.Contains(f, StringComparison.OrdinalIgnoreCase));
         }
+
+        if (!string.IsNullOrWhiteSpace(FilterCustomer))
+        {
+            string f = FilterCustomer.Trim();
+            q = q.Where(x => x.Customer != null && x.Customer.Contains(f, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(FilterVendor))
+        {
+            string f = FilterVendor.Trim();
+            q = q.Where(x => x.Vendor != null && x.Vendor.Contains(f, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (FilterStartDate.HasValue || FilterEndDate.HasValue)
+        {
+            var start = FilterStartDate ?? DateTime.MinValue;
+            var end = FilterEndDate ?? DateTime.MaxValue;
+
+            if (FilterStartDate.HasValue)
+                start = FilterStartDate.Value.Date;
+            if (FilterEndDate.HasValue)
+                end = FilterEndDate.Value.Date.AddDays(1).AddTicks(-1);
+
+            q = q.Where(x =>
+            {
+                string dateToParse = !string.IsNullOrWhiteSpace(x.SecDate) ? x.SecDate : x.Date;
+                if (DateTime.TryParse(dateToParse, out var recordDate))
+                {
+                    return recordDate >= start && recordDate <= end;
+                }
+                return false;
+            });
+        }
+
         foreach (var r in q)
             Items.Add(r);
+    }
+
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        FilterPlate = "";
+        FilterCustomer = "";
+        FilterVendor = "";
+        FilterStartDate = null;
+        FilterEndDate = null;
     }
 
     [RelayCommand]
@@ -53,5 +110,21 @@ public sealed partial class RecordsViewModel : ObservableObject, IActivatable
             return;
         _repo.DeleteSecWeight(Selected.Id);
         OnActivated();
+    }
+
+    [RelayCommand]
+    private void Print()
+    {
+        if (Selected is null)
+            return;
+        try
+        {
+            _printer.Print(Selected);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Fiş yazdırılırken hata oluştu: {ex.Message}", "Yazdırma Hatası",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

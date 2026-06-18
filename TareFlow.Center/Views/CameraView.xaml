@@ -3,9 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Background="Black" ClipToBounds="True">
         <Grid>
-            <Image x:Name="image" Stretch="Fill"/>
+            <Image x:Name="image" Stretch="Uniform"/>
             <TextBlock x:Name="placeholder" Text="Kamera bekleniyor…"
-                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Foreground="#CCFFFFFF" TextWrapping="Wrap" TextAlignment="Center"
+                       MaxWidth="520" Margin="20"
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
     </Border>

@@ -5,8 +5,9 @@ using System.Windows.Input;
 namespace TareFlow.Center.Views;
 
 /// <summary>
-/// Kamerayı tam ekran gösterir. Paylaşılan canlı kareyi (App.Camera.Frame) bağlar;
-/// üstte kameralar arası geçiş yapılabilir. Esc veya çift tıkla kapanır.
+/// Kamerayı tam ekran gösterir. Paylaşılan oynatıcı (App.Camera.Player) açılışta bu
+/// pencerenin VideoView'ına atanır, kapanışta bırakılır (istasyon geri alır).
+/// Üstte kameralar arası geçiş; Esc veya çift tıkla kapanır.
 /// </summary>
 public partial class CameraFullscreenWindow : Window
 {
@@ -16,7 +17,7 @@ public partial class CameraFullscreenWindow : Window
     {
         InitializeComponent();
         Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
+        Closed += OnClosed;
         KeyDown += OnKeyDown;
     }
 
@@ -25,33 +26,18 @@ public partial class CameraFullscreenWindow : Window
         if (App.Camera is not { } cam)
             return;
 
-        // Kamera listesini doldur ve aktif olanı seç.
+        VideoView.MediaPlayer = cam.Player;
+
         _suppressSelection = true;
         CameraList.ItemsSource = cam.Cameras;
         CameraList.SelectedIndex = cam.ActiveCamera;
         _suppressSelection = false;
-
-        cam.FrameReady -= OnFrameReady;
-        cam.FrameReady += OnFrameReady;
-        ApplyFrame();
         Focus();
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    private void OnClosed(object? sender, EventArgs e)
     {
-        if (App.Camera is { } cam)
-            cam.FrameReady -= OnFrameReady;
-    }
-
-    private void OnFrameReady() => Dispatcher.Invoke(ApplyFrame);
-
-    private void ApplyFrame()
-    {
-        var frame = App.Camera?.Frame;
-        if (frame is null)
-            return;
-        image.Source = frame;
-        placeholder.Visibility = Visibility.Collapsed;
+        VideoView.MediaPlayer = null;   // oynatıcıyı bırak (istasyon geri alacak)
     }
 
     private void CameraList_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -1,31 +1,86 @@
 <UserControl x:Class="TareFlow.Center.Views.WeighStationView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="clr-namespace:TareFlow.Center.Views">
+             xmlns:views="clr-namespace:TareFlow.Center.Views"
+             xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF">
     <UserControl.Resources>
-        
+        <views:BoolToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- PTZ yön/zoom butonu (basılı tutunca hareket) -->
+        <Style x:Key="PtzBtn" TargetType="Button">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Margin" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="8" Background="#55FFFFFF">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
-        
         <Style x:Key="CompactBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Height" Value="34"/>
             <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
         <Style x:Key="CompactCheck" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Margin" Value="0,3"/>
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+        <Style x:Key="NetCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SuccessSoftBrush}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="0,4,0,12"/>
         </Style>
 
-        
+        <!-- Liste öğesi (bekleyen / kayıtlı dara) -->
+        <Style x:Key="RowItem" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Padding="10,7">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverOverlayBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter Property="TextElement.Foreground" Value="{DynamicResource OnPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Kamera geçiş pill listesi -->
         <Style x:Key="CameraTabList" TargetType="ListBox">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
             <Setter Property="ItemsPanel">
                 <Setter.Value>
                     <ItemsPanelTemplate>
@@ -66,7 +121,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="CamIconButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -91,16 +145,35 @@
             </Setter>
         </Style>
 
-        
-        <Style x:Key="RowItem" TargetType="ListBoxItem">
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="0,2"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <!-- Sekme çubuğu: sağ panelde 2x2 segment -->
+        <Style x:Key="StatusTabs" TargetType="TabControl">
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Padding="10,7">
-                            <ContentPresenter/>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <UniformGrid Columns="3" IsItemsHost="True" Margin="0,0,0,10"/>
+                            <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+                                <ContentPresenter ContentSource="SelectedContent" Margin="14"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="StatusTab" TargetType="TabItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd" Margin="3" CornerRadius="9" Padding="6,11"
+                                Background="{DynamicResource SurfaceVariantBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                            <TextBlock Text="{TemplateBinding Header}" HorizontalAlignment="Center" TextAlignment="Center"
+                                       FontFamily="{StaticResource GoogleSansBold}" FontSize="13"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -108,6 +181,7 @@
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
                                 <Setter Property="TextElement.Foreground" Value="{DynamicResource OnPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -117,290 +191,309 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="3*" MinHeight="160"/>
-            <RowDefinition Height="2*" MinHeight="240"/>
-        </Grid.RowDefinitions>
+    <!-- SOL %70 kamera · SAĞ %30 tartım -->
+    <Grid x:Name="RootGrid" Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="CamCol" Width="7*"/>
+            <ColumnDefinition x:Name="GapCol" Width="16"/>
+            <ColumnDefinition x:Name="TabsCol" Width="3*" MinWidth="320"/>
+        </Grid.ColumnDefinitions>
 
-        
-        <Border Grid.Row="0" CornerRadius="14" ClipToBounds="True"
-                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,12">
+        <!-- ===== KAMERA ===== -->
+        <Border Grid.Column="0" CornerRadius="14" ClipToBounds="True"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="Black">
             <Grid>
-                <views:CameraView/>
-                <Grid VerticalAlignment="Top" Margin="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Kontrol çubuğu: butonlar VideoView DIŞINDA (normal WPF) → sayfayla gelir-gider,
+                     ayrı 'foreground' penceresi oluşmaz, başka sayfalarda takılı kalmaz. -->
+                <Grid Grid.Row="0" Background="#0E1216">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <ListBox Grid.Column="0" Style="{StaticResource CameraTabList}"
-                             ItemsSource="{Binding Cameras}"
-                             SelectedIndex="{Binding SelectedCameraIndex, Mode=TwoWay}"/>
-                    <Button Grid.Column="1" x:Name="BtnFullscreen" Style="{StaticResource CamIconButton}"
-                            Tag="&#xE5D0;" Content="Tam Ekran" Click="BtnFullscreen_Click"/>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="10,8">
+                        <ListBox Style="{StaticResource CameraTabList}" VerticalAlignment="Center"
+                                 ItemsSource="{Binding Cameras}" SelectedIndex="{Binding SelectedCameraIndex, Mode=TwoWay}"/>
+                        <TextBlock x:Name="CamStatus" Foreground="#CCFFFFFF" FontSize="12" VerticalAlignment="Center"
+                                   Margin="10,0,0,0" TextTrimming="CharacterEllipsis" MaxWidth="380"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,6" VerticalAlignment="Center">
+                        <!-- PTZ: kontrol çubuğuna gömülü (yalnız PTZ kamerada görünür) -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0"
+                                    Visibility="{Binding ActiveCameraHasPtz, Converter={StaticResource BoolToVis}}">
+                            <UniformGrid Rows="3" Columns="3" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PtzBtn}" Tag="UL" Content="&#x2196;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                                <Button Style="{StaticResource PtzBtn}" Tag="U" Content="&#x2191;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                                <Button Style="{StaticResource PtzBtn}" Tag="UR" Content="&#x2197;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                                <Button Style="{StaticResource PtzBtn}" Tag="L" Content="&#x2190;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                                <Border/>
+                                <Button Style="{StaticResource PtzBtn}" Tag="R" Content="&#x2192;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                                <Button Style="{StaticResource PtzBtn}" Tag="DL" Content="&#x2199;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                                <Button Style="{StaticResource PtzBtn}" Tag="D" Content="&#x2193;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                                <Button Style="{StaticResource PtzBtn}" Tag="DR" Content="&#x2198;"
+                                        PreviewMouseLeftButtonDown="PtzDown" PreviewMouseLeftButtonUp="PtzUp" MouseLeave="PtzLeave"/>
+                            </UniformGrid>
+                            <StackPanel VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </StackPanel>
+                        <Button x:Name="BtnTalk" Style="{StaticResource CamIconButton}" Margin="0,0,6,0"
+                                Tag="&#xE029;" Content="Bas-Konuş" Click="BtnTalk_Click"/>
+                        <Button x:Name="BtnFullscreen" Style="{StaticResource CamIconButton}"
+                                Tag="&#xE5D0;" Content="Tam Ekran" Click="BtnFullscreen_Click"/>
+                    </StackPanel>
                 </Grid>
 
-                
-                <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="12"
-                        CornerRadius="12" Padding="14,8" Background="#99000000">
-                    <TextBlock Foreground="White" FontFamily="{StaticResource GoogleSansBold}">
-                        <Run Text="{Binding Scale.CurrentWeight, Mode=OneWay}" FontSize="26"/>
-                        <Run Text=" kg" FontSize="14"/>
-                    </TextBlock>
-                </Border>
+                <!-- Video: tüm alanı doldurur; en-boy oranı görünüm boyutuna eşitlenir (stretch → siyah kenar yok) -->
+                <vlc:VideoView x:Name="VideoView" Grid.Row="1" SizeChanged="VideoView_SizeChanged"/>
             </Grid>
         </Border>
 
-        
-        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+        <!-- ===== SAĞ: TARTIM ===== -->
+        <TabControl x:Name="Tabs" Grid.Column="2" Style="{StaticResource StatusTabs}"
+                    SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
-            <TabItem Header="1. Tartım">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="2">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="18"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="CANLI AĞIRLIK" Style="{StaticResource FieldLabel}"/>
-                            <Border Padding="16,12" CornerRadius="12" Background="{DynamicResource SurfaceVariantBrush}" Margin="0,0,0,12">
-                                <TextBlock TextAlignment="Center" Foreground="{DynamicResource SecondaryBrush}" FontFamily="{StaticResource GoogleSansBold}">
-                                    <Run Text="{Binding Scale.CurrentWeight, Mode=OneWay}" FontSize="34"/>
-                                    <Run Text=" kg" FontSize="16"/>
-                                </TextBlock>
-                            </Border>
-                            <TextBlock Text="Tarih" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding Weigh.Date}" IsReadOnly="True" Style="{StaticResource CompactBox}"/>
-                        </StackPanel>
-
-                        
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Plaka" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding Weigh.Plate, UpdateSourceTrigger=PropertyChanged}"
-                                     FontSize="16" Height="38" Margin="0,0,0,10"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <CheckBox Content="Alıcı" IsChecked="{Binding Weigh.UseCustomer}" Style="{StaticResource CompactCheck}"/>
-                                    <TextBox Text="{Binding Weigh.Customer}" IsEnabled="{Binding Weigh.UseCustomer}" Style="{StaticResource CompactBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <CheckBox Content="Satıcı" IsChecked="{Binding Weigh.UseVendor}" Style="{StaticResource CompactCheck}"/>
-                                    <TextBox Text="{Binding Weigh.Vendor}" IsEnabled="{Binding Weigh.UseVendor}" Style="{StaticResource CompactBox}"/>
-                                </StackPanel>
-                            </Grid>
-                            <CheckBox Content="Ürün" IsChecked="{Binding Weigh.UseProduct}" Style="{StaticResource CompactCheck}" Margin="0,8,0,3"/>
-                            <TextBox Text="{Binding Weigh.Product}" IsEnabled="{Binding Weigh.UseProduct}" Style="{StaticResource CompactBox}"/>
-                            <Button Content="Kaydet" Command="{Binding Weigh.SaveCommand}" Height="44" Margin="0,14,0,0"
-                                    Style="{StaticResource PrimaryButton}" FontSize="15"/>
-                        </StackPanel>
-                    </Grid>
+            <!-- 1. TARTIM -->
+            <TabItem Header="1. Tartım" Style="{StaticResource StatusTab}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Plaka" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Weigh.Plate, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper" FontSize="18" Height="40" Margin="0,0,0,12"/>
+                        <TextBlock Text="Alıcı" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Weigh.Customer}" Style="{StaticResource CompactBox}"/>
+                        <TextBlock Text="Satıcı" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Weigh.Vendor}" Style="{StaticResource CompactBox}"/>
+                        <TextBlock Text="Ürün" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Weigh.Product}" Style="{StaticResource CompactBox}"/>
+                        <TextBlock Text="Tarih" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Weigh.Date}" IsReadOnly="True" Style="{StaticResource CompactBox}"/>
+                        <Button Content="Kaydet" Command="{Binding Weigh.SaveCommand}" Height="46"
+                                Style="{StaticResource PrimaryButton}" FontSize="15"/>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            
-            <TabItem Header="2. Tartım">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="220"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    
-                    <DockPanel Grid.Column="0">
-                        <TextBlock DockPanel.Dock="Top" Text="Bekleyen Araçlar" FontSize="13"
-                                   FontFamily="{StaticResource GoogleSansBold}" Margin="0,0,0,8"/>
-                        <Border Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="10"
-                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="5">
+            <!-- 2. TARTIM -->
+            <TabItem Header="2. Tartım" Style="{StaticResource StatusTab}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Bekleyen Araçlar" Style="{StaticResource FieldLabel}"/>
+                        <Border Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="10" MaxHeight="150"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="5" Margin="0,0,0,10">
                             <ListBox ItemsSource="{Binding Second.Pending}" SelectedItem="{Binding Second.Selected}"
-                                     Background="Transparent" BorderThickness="0"
-                                     ItemContainerStyle="{StaticResource RowItem}">
+                                     Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource RowItem}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Plate}" FontFamily="{StaticResource GoogleSansBold}" FontSize="14"/>
-                                            <TextBlock Text="{Binding Date}" Opacity="0.7" FontSize="10"/>
                                             <TextBlock FontSize="10" Opacity="0.8">
-                                                <Run Text="1. Tartım: "/><Run Text="{Binding Weight, Mode=OneWay}"/><Run Text=" kg"/>
+                                                <Run Text="{Binding Date}"/><Run Text="  •  1.T: "/><Run Text="{Binding Weight, Mode=OneWay}"/><Run Text=" kg"/>
                                             </TextBlock>
                                         </StackPanel>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
                         </Border>
-                    </DockPanel>
-
-                    
-                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="2">
-                        <Grid>
+                        <TextBlock Text="PLAKA" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{Binding Second.Selected.Plate}" FontSize="20" FontFamily="{StaticResource GoogleSansBold}" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="18"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="PLAKA" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding Second.Selected.Plate}" FontSize="22" FontFamily="{StaticResource GoogleSansBold}" Margin="0,0,0,10"/>
-                                <Grid Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="1. Tartım" Style="{StaticResource FieldLabel}"/>
-                                        <TextBlock FontSize="16" FontFamily="{StaticResource GoogleSansMedium}">
-                                            <Run Text="{Binding Second.Selected.Weight, Mode=OneWay}"/><Run Text=" kg"/>
-                                        </TextBlock>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="2. Tartım (canlı)" Style="{StaticResource FieldLabel}"/>
-                                        <TextBlock FontSize="16" FontFamily="{StaticResource GoogleSansMedium}" Foreground="{DynamicResource SecondaryBrush}">
-                                            <Run Text="{Binding Second.SecWeightValue, Mode=OneWay}"/><Run Text=" kg"/>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </Grid>
-                                <CheckBox Content="Ağırlığı kantardan canlı al" IsChecked="{Binding Second.LiveWeight}" Style="{StaticResource CompactCheck}"/>
-                                <TextBox Text="{Binding Second.SecWeightValue, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding Second.LiveWeight, Converter={x:Static views:NotConverter.Instance}}"
-                                         Style="{StaticResource CompactBox}"/>
-                                <Border Background="{DynamicResource SuccessSoftBrush}" CornerRadius="10" Padding="12" Margin="0,10,0,0">
-                                    <TextBlock>
-                                        <Run Text="NET  " FontSize="13" Foreground="{DynamicResource SuccessBrush}"/>
-                                        <Run Text="{Binding Second.Total, Mode=OneWay}" FontSize="24" FontFamily="{StaticResource GoogleSansBold}" Foreground="{DynamicResource SuccessBrush}"/>
-                                        <Run Text=" kg" FontSize="13" Foreground="{DynamicResource SuccessBrush}"/>
-                                    </TextBlock>
-                                </Border>
+                                <TextBlock Text="1. Tartım" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock FontSize="15" FontFamily="{StaticResource GoogleSansMedium}">
+                                    <Run Text="{Binding Second.Selected.Weight, Mode=OneWay}"/><Run Text=" kg"/>
+                                </TextBlock>
                             </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Seçenekler" Style="{StaticResource FieldLabel}"/>
-                                <CheckBox Content="Kamyonet (Van)" IsChecked="{Binding Second.IsVan}" Style="{StaticResource CompactCheck}"/>
-                                <CheckBox Content="Ücret ödendi" IsChecked="{Binding Second.IsPaid}" Style="{StaticResource CompactCheck}"/>
-                                <CheckBox Content="Fiş yazdır" IsChecked="{Binding Second.ShouldPrint}" Style="{StaticResource CompactCheck}"/>
-                                <Button Content="Kaydet ve Bitir" Command="{Binding Second.SaveCommand}" Height="44" Margin="0,12,0,0"
-                                        Style="{StaticResource PrimaryButton}" FontSize="15"/>
-                                <Button Content="Bekleyen Kaydı Sil" Command="{Binding Second.DeleteCommand}" Height="38" Margin="0,8,0,0"
-                                        Style="{StaticResource DangerButton}" FontSize="13"/>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="2. Tartım" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock FontSize="15" FontFamily="{StaticResource GoogleSansMedium}" Foreground="{DynamicResource SecondaryBrush}">
+                                    <Run Text="{Binding Second.SecWeightValue, Mode=OneWay}"/><Run Text=" kg"/>
+                                </TextBlock>
                             </StackPanel>
                         </Grid>
-                    </ScrollViewer>
-                </Grid>
+                        <TextBlock Text="2. Tartım (kg)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Second.SecWeightValue, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactBox}"/>
+                        <Border Style="{StaticResource NetCard}">
+                            <TextBlock>
+                                <Run Text="NET  " FontSize="12" Foreground="{DynamicResource SuccessBrush}"/>
+                                <Run Text="{Binding Second.Total, Mode=OneWay}" FontSize="24" FontFamily="{StaticResource GoogleSansBold}" Foreground="{DynamicResource SuccessBrush}"/>
+                                <Run Text=" kg" FontSize="12" Foreground="{DynamicResource SuccessBrush}"/>
+                            </TextBlock>
+                        </Border>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox Content="Kamyonet (Van)" IsChecked="{Binding Second.IsVan}" Style="{StaticResource CompactCheck}" Margin="0,0,16,0"/>
+                            <CheckBox Content="Ücret ödendi" IsChecked="{Binding Second.IsPaid}" Style="{StaticResource CompactCheck}"/>
+                        </StackPanel>
+                        <Button Content="Kaydet ve Bitir" Command="{Binding Second.SaveCommand}" Height="46" Margin="0,8,0,0"
+                                Style="{StaticResource PrimaryButton}" FontSize="15"/>
+                        <Button Content="Bekleyen Kaydı Sil" Command="{Binding Second.DeleteCommand}" Height="36" Margin="0,8,0,0"
+                                Style="{StaticResource DangerButton}" FontSize="12"/>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
-            
-            <TabItem Header="Sabit Dara">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="220"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- MANUEL TARTIM -->
+            <TabItem Header="Manuel Tartım" Style="{StaticResource StatusTab}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Plaka" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Manual.Plate, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper" FontSize="18" Height="40" Margin="0,0,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="1. Tartım (kg)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Manual.FirstWeight, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactBox}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Oku" Command="{Binding Manual.CaptureFirstCommand}"
+                                    Width="60" Height="34" VerticalAlignment="Bottom" Margin="0,0,0,10"
+                                    Style="{StaticResource SecondaryButton}"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="2. Tartım (kg)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Manual.SecondWeight, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactBox}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Oku" Command="{Binding Manual.CaptureSecondCommand}"
+                                    Width="60" Height="34" VerticalAlignment="Bottom" Margin="0,0,0,10"
+                                    Style="{StaticResource SecondaryButton}"/>
+                        </Grid>
+                        <TextBlock Text="Alıcı" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Manual.Customer}" Style="{StaticResource CompactBox}"/>
+                        <TextBlock Text="Ürün" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Manual.Product}" Style="{StaticResource CompactBox}"/>
+                        <TextBlock RenderTransformOrigin="0.5,1"><Run Text="NET  " FontSize="12" Foreground="{DynamicResource SuccessBrush}"/><Run Text=" "/><Run Text="{Binding Manual.Net, Mode=OneWay}" FontSize="24" FontFamily="{StaticResource GoogleSansBold}" Foreground="{DynamicResource SuccessBrush}"/><Run Text=" "/><Run Text=" kg" FontSize="12" Foreground="{DynamicResource SuccessBrush}"/></TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox Content="Kamyonet (100 ₺)" IsChecked="{Binding Manual.IsVan}" Style="{StaticResource CompactCheck}" Margin="0,0,16,0" RenderTransformOrigin="0.5,1"/>
+                            <CheckBox Content="Ücret ödendi" IsChecked="{Binding Manual.IsPaid}" Style="{StaticResource CompactCheck}" RenderTransformOrigin="0.5,1"/>
+                        </StackPanel>
+                        <Button Content="Kaydet ve Fiş Bas" Command="{Binding Manual.SaveCommand}" Height="46" Margin="0,8,0,0"
+                                Style="{StaticResource PrimaryButton}" FontSize="15" RenderTransformOrigin="0.5,1"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                    
-                    <DockPanel Grid.Column="0">
-                        <TextBlock DockPanel.Dock="Top" Text="Kayıtlı Daralar" FontSize="13"
-                                   FontFamily="{StaticResource GoogleSansBold}" Margin="0,0,0,8"/>
-                        <Border Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="10"
-                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="5">
+            <!-- SABİT TARTIM -->
+            <TabItem Header="Sabit Tartım" Style="{StaticResource StatusTab}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Plaka" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding Tare.KnownPlates}"
+                                  SelectedValue="{Binding Tare.Plate, Mode=TwoWay}"
+                                  SelectedValuePath="Plate"
+                                  DisplayMemberPath="Plate"
+                                  IsEditable="True"
+                                  FontSize="18" Height="40" Margin="0,0,0,10"
+                                  VerticalContentAlignment="Center"/>
+
+                        <TextBlock Text="1. Tartım (Dara - kg)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Tare.KnownTare, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource CompactBox}"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="2. Tartım (Dolu - kg)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Tare.LoadedValue, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactBox}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Oku" Command="{Binding Tare.CaptureLoadedCommand}"
+                                    Width="60" Height="34" VerticalAlignment="Bottom" Margin="0,0,0,10"
+                                    Style="{StaticResource SecondaryButton}"/>
+                        </Grid>
+
+                        <TextBlock Text="Alıcı" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Tare.Customer}" Style="{StaticResource CompactBox}"/>
+
+                        <TextBlock Text="Satıcı" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Tare.Vendor}" Style="{StaticResource CompactBox}"/>
+
+                        <TextBlock Text="Ürün" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Tare.Product}" Style="{StaticResource CompactBox}"/>
+
+                        <Border Style="{StaticResource NetCard}">
+                            <TextBlock>
+                                <Run Text="NET  " FontSize="12" Foreground="{DynamicResource SuccessBrush}"/>
+                                <Run Text="{Binding Tare.Net, Mode=OneWay}" FontSize="24" FontFamily="{StaticResource GoogleSansBold}" Foreground="{DynamicResource SuccessBrush}"/>
+                                <Run Text=" kg" FontSize="12" Foreground="{DynamicResource SuccessBrush}"/>
+                            </TextBlock>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <CheckBox Content="Kamyonet (Van)" IsChecked="{Binding Tare.IsVan}" Style="{StaticResource CompactCheck}" Margin="0,0,16,0"/>
+                            <CheckBox Content="Ücret ödendi" IsChecked="{Binding Tare.IsPaid}" Style="{StaticResource CompactCheck}"/>
+                        </StackPanel>
+
+                        <Button Content="Tartım + Fiş Bas" Command="{Binding Tare.WeighCommand}" Height="46" Margin="0,8,0,0"
+                                Style="{StaticResource PrimaryButton}" FontSize="15"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- DARA TANIMLA -->
+            <TabItem Header="Dara Tanımla" Style="{StaticResource StatusTab}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Plaka" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Tare.Plate, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper" FontSize="18" Height="40" Margin="0,0,0,10"/>
+                        <TextBlock Text="Kayıtlı Daralar" Style="{StaticResource FieldLabel}"/>
+                        <Border Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="10" MaxHeight="150"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="5" Margin="0,0,0,12">
                             <ListBox ItemsSource="{Binding Tare.KnownPlates}" SelectedItem="{Binding Tare.SelectedKnown, Mode=TwoWay}"
-                                     Background="Transparent" BorderThickness="0"
-                                     ItemContainerStyle="{StaticResource RowItem}">
+                                     Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource RowItem}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Plate}" FontFamily="{StaticResource GoogleSansBold}" FontSize="14"/>
-                                            <TextBlock FontSize="10" Opacity="0.8">
-                                                <Run Text="Dara: "/><Run Text="{Binding Weight, Mode=OneWay}"/><Run Text=" kg"/>
-                                            </TextBlock>
-                                        </StackPanel>
+                                        <TextBlock>
+                                            <Run Text="{Binding Plate}" FontFamily="{StaticResource GoogleSansBold}"/><Run Text="  —  "/><Run Text="{Binding Weight, Mode=OneWay}"/><Run Text=" kg"/>
+                                        </TextBlock>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
                         </Border>
-                    </DockPanel>
 
-                    
-                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="2">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="18"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Plaka" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Text="{Binding Tare.Plate, UpdateSourceTrigger=PropertyChanged}"
-                                         FontSize="16" Height="38" Margin="0,0,0,10"/>
-                                <Grid Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Kayıtlı Dara" Style="{StaticResource FieldLabel}"/>
-                                        <TextBlock Text="{Binding Tare.TareDisplay}" FontSize="16" FontFamily="{StaticResource GoogleSansMedium}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="Dolu (canlı)" Style="{StaticResource FieldLabel}"/>
-                                        <TextBlock FontSize="16" FontFamily="{StaticResource GoogleSansMedium}" Foreground="{DynamicResource SecondaryBrush}">
-                                            <Run Text="{Binding Tare.LoadedValue, Mode=OneWay}"/><Run Text=" kg"/>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </Grid>
-                                <CheckBox Content="Dolu ağırlığı canlı al" IsChecked="{Binding Tare.LiveWeight}" Style="{StaticResource CompactCheck}"/>
-                                <TextBox Text="{Binding Tare.LoadedValue, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding Tare.LiveWeight, Converter={x:Static views:NotConverter.Instance}}"
-                                         Style="{StaticResource CompactBox}"/>
-                                <Border Background="{DynamicResource SuccessSoftBrush}" CornerRadius="10" Padding="12" Margin="0,10,0,0">
-                                    <TextBlock>
-                                        <Run Text="NET  " FontSize="13" Foreground="{DynamicResource SuccessBrush}"/>
-                                        <Run Text="{Binding Tare.Net, Mode=OneWay}" FontSize="24" FontFamily="{StaticResource GoogleSansBold}" Foreground="{DynamicResource SuccessBrush}"/>
-                                        <Run Text=" kg" FontSize="13" Foreground="{DynamicResource SuccessBrush}"/>
-                                    </TextBlock>
-                                </Border>
+                                <TextBlock Text="Yeni Dara (kg)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Tare.TareInput, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactBox}"/>
                             </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="12"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <CheckBox Content="Alıcı" IsChecked="{Binding Tare.UseCustomer}" Style="{StaticResource CompactCheck}"/>
-                                        <TextBox Text="{Binding Tare.Customer}" IsEnabled="{Binding Tare.UseCustomer}" Style="{StaticResource CompactBox}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <CheckBox Content="Ürün" IsChecked="{Binding Tare.UseProduct}" Style="{StaticResource CompactCheck}"/>
-                                        <TextBox Text="{Binding Tare.Product}" IsEnabled="{Binding Tare.UseProduct}" Style="{StaticResource CompactBox}"/>
-                                    </StackPanel>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <CheckBox Content="Van" IsChecked="{Binding Tare.IsVan}" Style="{StaticResource CompactCheck}" Margin="0,0,12,0"/>
-                                    <CheckBox Content="Ödendi" IsChecked="{Binding Tare.IsPaid}" Style="{StaticResource CompactCheck}" Margin="0,0,12,0"/>
-                                    <CheckBox Content="Fiş" IsChecked="{Binding Tare.ShouldPrint}" Style="{StaticResource CompactCheck}"/>
-                                </StackPanel>
-                                <Button Content="Darayı Kaydet (boş)" Command="{Binding Tare.SaveTareCommand}" Height="40"
-                                        Style="{StaticResource SecondaryButton}" FontSize="13"/>
-                                <Button Content="Tartım + Fiş Bas" Command="{Binding Tare.WeighCommand}" Height="44" Margin="0,8,0,0"
-                                        Style="{StaticResource PrimaryButton}" FontSize="15"/>
-                                <Button Content="Darayı Sil" Command="{Binding Tare.DeleteTareCommand}" Height="34" Margin="0,6,0,0"
-                                        Style="{StaticResource GhostButton}" FontSize="12"/>
-                            </StackPanel>
+                            <Button Grid.Column="2" Content="Oku" Command="{Binding Tare.CaptureTareCommand}"
+                                    Width="60" Height="34" VerticalAlignment="Bottom" Margin="0,0,0,10"
+                                    Style="{StaticResource SecondaryButton}"/>
                         </Grid>
-                    </ScrollViewer>
-                </Grid>
+
+                        <Button Content="Darayı Kaydet" Command="{Binding Tare.SaveTareCommand}" Height="46" Margin="0,8,0,0"
+                                Style="{StaticResource PrimaryButton}" FontSize="15"/>
+                        <Button Content="Darayı Sil" Command="{Binding Tare.DeleteTareCommand}" Height="36" Margin="0,8,0,0"
+                                Style="{StaticResource DangerButton}" FontSize="12"/>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
     </Grid>

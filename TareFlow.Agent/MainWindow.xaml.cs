@@ -8,11 +8,17 @@ public partial class MainWindow : Window
 {
     private readonly ScaleBridge _bridge = new();
     private readonly AgentSettings _settings;
+    private AudioTalkListener? _audio;
 
     public MainWindow()
     {
         InitializeComponent();
         _settings = AgentSettings.Load();
+
+        // Bas-konuş sesini dinle (merkezden gelen sesi kantar hoparlöründen çal).
+        _audio = new AudioTalkListener(_settings.AudioPort);
+        _audio.Log += OnLog;
+        _audio.Start();
 
         foreach (var p in SerialPort.GetPortNames())
             cmbPort.Items.Add(p);
@@ -23,7 +29,7 @@ public partial class MainWindow : Window
         _bridge.Log += OnLog;
         _bridge.ReadingReceived += OnReading;
 
-        Closing += (_, _) => _bridge.Stop();
+        Closing += (_, _) => { _bridge.Stop(); _audio?.Stop(); };
 
         if (_settings.AutoStart)
             Start(silent: true);

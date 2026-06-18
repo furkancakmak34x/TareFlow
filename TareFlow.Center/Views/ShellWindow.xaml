@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:TareFlow.Center.Views"
         Title="TareFlow — Uzaktan Kantar" Height="800" Width="1280"
+        WindowStyle="None" WindowState="Maximized" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BackgroundBrush}">
     <Window.Resources>
@@ -34,7 +35,7 @@
                                            FontSize="58" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.95"/>
                                 <StackPanel Grid.Row="1">
                                     <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource GoogleSansBold}"
-                                               FontSize="22" Margin="0,0,0,4"/>
+                                               FontSize="22" Margin="0,0,0,4" TextWrapping="Wrap"/>
                                     <TextBlock Text="{Binding (ToolTipService.ToolTip), RelativeSource={RelativeSource TemplatedParent}}"
                                                FontFamily="{StaticResource GoogleSans}" FontSize="13" Opacity="0.8" TextWrapping="Wrap"/>
                                 </StackPanel>
@@ -134,10 +135,8 @@
                                    Foreground="{DynamicResource OnPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="TareFlow" FontFamily="{StaticResource GoogleSansBold}" FontSize="36"
+                        <TextBlock Text="Bayat Köyü Kantarı" FontFamily="{StaticResource GoogleSansBold}" FontSize="36"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Uzaktan Tır Kantarı Otomasyonu" FontFamily="{StaticResource GoogleSansMedium}"
-                                   FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}" Margin="2,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -149,27 +148,33 @@
                 </StackPanel>
             </Grid>
 
-            
+            <!-- Row 1: Dashboard Tiles (1 - 2 - 2 Column-based Grid Layout) -->
             <Grid Grid.Row="1" Margin="42,10,42,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.5*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Grid.Column="0"
+                <!-- Column 0 (Tall Tile spanning both rows): Tartım -->
+                <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
                         Style="{StaticResource HomeTileStyle}" Background="{DynamicResource PrimaryBrush}"
-                        Content="Tartım" Tag="&#xE3B0;" ToolTip="1. Tartım, 2. Tartım ve Sabit Dara — tek ekranda"
+                        Content="Tartım" Tag="&#xE3B0;" ToolTip="Araç tartım işlemleri."
                         Command="{Binding ShowStationCommand}"/>
 
-                <Button Grid.Column="1"
+                <!-- Column 1 (Middle Column): Kayıtlar (Top) & Tahsilat Ekranı (Bottom) -->
+                <Button Grid.Row="0" Grid.Column="1"
                         Style="{StaticResource HomeTileStyle}" Background="{DynamicResource WarningBrush}"
-                        Content="Kayıtlar" Tag="&#xE889;" ToolTip="Geçmiş tartım kayıtları"
+                        Content="Kayıtlar" Tag="&#xE889;" ToolTip="Geçmiş tartım kayıtları."
                         Command="{Binding ShowRecordsCommand}"/>
 
-                <Button Grid.Column="2"
-                        Style="{StaticResource HomeTileStyle}" Content="Tahsilat" Tag="&#xE227;"
-                        ToolTip="Müşteri bazlı bekleyen kantar ücretleri ve tahsilat" Command="{Binding ShowReceivableCommand}">
+                <Button Grid.Row="1" Grid.Column="1"
+                        Style="{StaticResource HomeTileStyle}" Content="Tahsilat Ekranı" Tag="&#xE227;"
+                        ToolTip="Müşteri bazlı bekleyen kantar ücretleri." Command="{Binding ShowReceivableCommand}">
                     <Button.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                             <GradientStop Color="#8B5CF6" Offset="0"/>
@@ -177,24 +182,22 @@
                         </LinearGradientBrush>
                     </Button.Background>
                 </Button>
+
+                <!-- Column 2 (Right Column): Ayarlar (Top) & Sistemi Kapat (Bottom) -->
+                <Button Grid.Row="0" Grid.Column="2"
+                        Style="{StaticResource HomeTileStyle}" Background="{DynamicResource SecondaryBrush}"
+                        Content="Ayarlar" Tag="&#xE8B8;" ToolTip="Kantar, kamera ve yazıcı ayarları."
+                        Command="{Binding ShowSettingsCommand}"/>
+
+                <Button Grid.Row="1" Grid.Column="2"
+                        Style="{StaticResource HomeTileStyle}" Background="{DynamicResource ErrorBrush}"
+                        Content="Kapat" Tag="&#xE8AC;" ToolTip="Uygulamayı güvenli bir şekilde kapatır."
+                        Click="BtnExit_Click"/>
             </Grid>
 
-            
+            <!-- Row 2: Scale Status -->
             <Grid Grid.Row="2" Margin="50,10,50,30">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <Button Grid.Column="0" Style="{StaticResource SmallActionStyle}" Tag="&#xE8B8;" Content="Ayarlar"
-                        Margin="0,0,10,0" Command="{Binding ShowSettingsCommand}"/>
-                <Button Grid.Column="1" Style="{StaticResource SmallActionStyle}" Tag="&#xE8AC;" Content="Sistemi Kapat"
-                        Click="BtnExit_Click"/>
-
-                
-                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Ellipse Width="11" Height="11" VerticalAlignment="Center"
                              Fill="{Binding Scale.IsConnected, Converter={StaticResource ConnBrush}}"/>
                     <TextBlock Margin="8,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center">

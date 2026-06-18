@@ -3,17 +3,71 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <DockPanel Margin="28">
         <Grid DockPanel.Dock="Top" Margin="0,0,0,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="300"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Tartım Kayıtları" FontSize="26"
+
+            <!-- Row 0: Title & Actions -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Tartım Kayıtları  " FontSize="26"
                        FontFamily="{StaticResource GoogleSansBold}" VerticalAlignment="Center"/>
-            <TextBox Grid.Column="1" Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Plaka veya tarih ile filtrele"/>
-            <Button Grid.Column="2" Content="Sil" Command="{Binding DeleteCommand}" Margin="12,0,0,0"
-                    Width="90" Style="{StaticResource DangerButton}"/>
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Yazdır" Command="{Binding PrintCommand}" Margin="0,0,12,0"
+                        Width="100" Style="{StaticResource PrimaryButton}"/>
+                <Button Content="Sil" Command="{Binding DeleteCommand}"
+                        Width="100" Style="{StaticResource DangerButton}"/>
+            </StackPanel>
+
+            <!-- Row 1: Advanced Filters -->
+            <Border Grid.Row="1" Grid.ColumnSpan="2" Margin="0,16,0,0" Padding="14"
+                    Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="12"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Plaka -->
+                    <StackPanel Margin="0,0,12,4" Width="120">
+                        <TextBlock Text="Plaka" FontSize="11" FontFamily="{StaticResource GoogleSansMedium}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="2,0,0,4"/>
+                        <TextBox Text="{Binding FilterPlate, UpdateSourceTrigger=PropertyChanged}" Height="34" VerticalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Alıcı -->
+                    <StackPanel Margin="0,0,12,4" Width="140">
+                        <TextBlock Text="Alıcı" FontSize="11" FontFamily="{StaticResource GoogleSansMedium}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="2,0,0,4"/>
+                        <TextBox Text="{Binding FilterCustomer, UpdateSourceTrigger=PropertyChanged}" Height="34" VerticalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Satıcı -->
+                    <StackPanel Margin="0,0,12,4" Width="140">
+                        <TextBlock Text="Satıcı" FontSize="11" FontFamily="{StaticResource GoogleSansMedium}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="2,0,0,4"/>
+                        <TextBox Text="{Binding FilterVendor, UpdateSourceTrigger=PropertyChanged}" Height="34" VerticalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Başlangıç Tarihi -->
+                    <StackPanel Margin="0,0,12,4" Width="140">
+                        <TextBlock Text="Başlangıç Tarihi" FontSize="11" FontFamily="{StaticResource GoogleSansMedium}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="2,0,0,4"/>
+                        <DatePicker SelectedDate="{Binding FilterStartDate}" Height="34" VerticalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Bitiş Tarihi -->
+                    <StackPanel Margin="0,0,12,4" Width="140">
+                        <TextBlock Text="Bitiş Tarihi" FontSize="11" FontFamily="{StaticResource GoogleSansMedium}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="2,0,0,4"/>
+                        <DatePicker SelectedDate="{Binding FilterEndDate}" Height="34" VerticalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Temizle Butonu -->
+                    <Button Content="   Filtreleri Temizle   " Command="{Binding ClearFiltersCommand}"
+                            Height="34" Margin="0,15,0,4" Padding="14,0" VerticalAlignment="Bottom"
+                            Style="{StaticResource SecondaryButton}"/>
+                </WrapPanel>
+            </Border>
         </Grid>
 
         <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14"
@@ -21,7 +75,8 @@
             <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
                       AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
                       Background="Transparent" HeadersVisibility="Column"
-                      GridLinesVisibility="Horizontal" RowHeight="36" FontSize="14">
+                      GridLinesVisibility="Horizontal" RowHeight="36" FontSize="14"
+                      FontFamily="{StaticResource GoogleSans}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Plaka" Binding="{Binding Plate}" Width="120"/>
                     <DataGridTextColumn Header="Giriş" Binding="{Binding Date}" Width="150"/>

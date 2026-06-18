@@ -47,9 +47,9 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
     /// <summary>true: dolu ağırlık kantardan canlı izlenir; false: elle giriş.</summary>
     [ObservableProperty] private bool _liveWeight = true;
 
-    [ObservableProperty] private bool _useCustomer;
-    [ObservableProperty] private bool _useVendor;
-    [ObservableProperty] private bool _useProduct;
+    /// <summary>Elle girilen dara (boş ağırlık) değeri — "Darayı Kaydet" bunu kullanır.</summary>
+    [ObservableProperty] private int _tareInput;
+
     [ObservableProperty] private string _customer = "";
     [ObservableProperty] private string _vendor = "";
     [ObservableProperty] private string _product = "";
@@ -71,10 +71,34 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
         Scale.PropertyChanged += OnScaleChanged;
     }
 
+    private bool _updatingFromScale;
+
     private void OnScaleChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (LiveWeight && e.PropertyName == nameof(ScaleClient.CurrentWeight))
+        {
+            _updatingFromScale = true;
             LoadedValue = Scale.CurrentWeight;
+            _updatingFromScale = false;
+        }
+    }
+
+    partial void OnLoadedValueChanged(int value)
+    {
+        if (!_updatingFromScale)
+        {
+            if (value == 0)
+            {
+                LiveWeight = true;
+                _updatingFromScale = true;
+                LoadedValue = Scale.CurrentWeight;
+                _updatingFromScale = false;
+            }
+            else
+            {
+                LiveWeight = false;
+            }
+        }
     }
 
     public void OnActivated()
@@ -91,7 +115,14 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
             KnownPlates.Add(t);
     }
 
-    partial void OnPlateChanged(string value) => LookupTare();
+    partial void OnPlateChanged(string value)
+    {
+        LookupTare();
+        LiveWeight = true;
+        _updatingFromScale = true;
+        LoadedValue = Scale.CurrentWeight;
+        _updatingFromScale = false;
+    }
 
     partial void OnSelectedKnownChanged(TareRecord? value)
     {
@@ -101,7 +132,7 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
 
     private void LookupTare()
     {
-        var t = string.IsNullOrWhiteSpace(Plate) ? null : _repo.GetTare(Plate.Trim());
+        var t = string.IsNullOrWhiteSpace(Plate) ? null : _repo.GetTare(Plate.Trim().ToUpperInvariant());
         if (t is null)
         {
             HasTare = false;
@@ -114,7 +145,7 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
         }
     }
 
-    /// <summary>Kantardaki anlık (boş) ağırlığı bu plakanın sabit darası olarak kaydeder/günceller.</summary>
+    /// <summary>Elle girilen dara (boş ağırlık) değerini bu plakanın sabit darası olarak kaydeder/günceller.</summary>
     [RelayCommand]
     private void SaveTare()
     {
@@ -123,26 +154,18 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
             MessageBox.Show("Plaka boş olamaz.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        int weight = Scale.CurrentWeight;
-        if (!Scale.IsStable || weight <= 0)
+        if (TareInput <= 0)
         {
-            if (MessageBox.Show("Kararlı bir tartım değeri yok. Yine de bu değer dara olarak kaydedilsin mi?",
-                    "Dara", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                return;
-        }
-
-        var confirm = MessageBox.Show(
-            $"Plaka: {Plate.Trim()}\nDara (boş): {weight} kg\n\nBu plakanın sabit darası kaydedilsin mi?",
-            "Sabit Dara", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes)
+            MessageBox.Show("Dara değerini (boş ağırlık) elle girin.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
+        }
 
         try
         {
-            _repo.UpsertTare(Plate.Trim(), weight, DateTime.Now.ToString("yyyy-MM-dd HH:mm", new CultureInfo("tr-TR")));
+            _repo.UpsertTare(Plate.Trim().ToUpperInvariant(), TareInput, DateTime.Now.ToString("yyyy-MM-dd HH:mm", new CultureInfo("tr-TR")));
             RefreshKnownPlates();
             LookupTare();
-            MessageBox.Show("Sabit dara kaydedildi.", "Dara", MessageBoxButton.OK, MessageBoxImage.Information);
+            TareInput = 0;
         }
         catch (Exception ex)
         {
@@ -161,14 +184,32 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
     }
 
     [RelayCommand]
+    private void CaptureTare() => TareInput = Scale.CurrentWeight;
+
+    [RelayCommand]
+    private void CaptureLoaded() => LoadedValue = Scale.CurrentWeight;
+
+    [RelayCommand]
     private void DeleteTare()
     {
-        if (string.IsNullOrWhiteSpace(Plate) || !HasTare)
+        if (string.IsNullOrWhiteSpace(Plate))
+        {
+            MessageBox.Show("Silinecek plakayı seçin veya girin.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
-        if (MessageBox.Show($"{Plate.Trim()} plakasının kayıtlı darası silinsin mi?",
+        }
+        string cleanPlate = Plate.Trim().ToUpperInvariant();
+        var t = _repo.GetTare(cleanPlate);
+        if (t is null)
+        {
+            MessageBox.Show($"{cleanPlate} plakasına ait kayıtlı dara bulunamadı.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        if (MessageBox.Show($"{cleanPlate} plakasının kayıtlı darası silinsin mi?",
                 "Dara Silme", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
-        _repo.DeleteTare(Plate.Trim());
+        _repo.DeleteTare(cleanPlate);
+        Plate = "";
+        SelectedKnown = null;
         RefreshKnownPlates();
         LookupTare();
     }
@@ -193,32 +234,28 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
             MessageBox.Show("Geçerli bir dolu ağırlık değeri yok.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (LoadedValue <= KnownTare)
+
+        string customer = (Customer ?? "").Trim();
+        if (!IsPaid && string.IsNullOrWhiteSpace(customer))
         {
-            if (MessageBox.Show("Dolu ağırlık, kayıtlı daradan küçük/eşit. Yine de devam edilsin mi?",
-                    "Sabit Dara", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                return;
+            customer = Views.CustomerSelectionDialog.Show(_repo) ?? "";
+            if (string.IsNullOrWhiteSpace(customer))
+                return; // Abort saving if user cancelled
         }
 
         string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm", new CultureInfo("tr-TR"));
         var rec = new SecWeightRecord
         {
-            Plate = Plate.Trim(),
+            Plate = Plate.Trim().ToUpperInvariant(),
             Date = now,
             SecDate = now,
-            Customer = UseCustomer ? Customer.Trim() : "",
-            Vendor = UseVendor ? Vendor.Trim() : "",
-            Product = UseProduct ? Product.Trim() : "",
+            Customer = customer,
+            Vendor = (Vendor ?? "").Trim(),
+            Product = (Product ?? "").Trim(),
             Weight = KnownTare,        // 1. tartım = sabit dara (boş)
             SecWeight = LoadedValue,   // 2. tartım = dolu
             Total = Net
         };
-
-        var confirm = MessageBox.Show(
-            $"Plaka: {rec.Plate}\nDara: {rec.Weight} kg\nDolu: {rec.SecWeight} kg\nNet: {rec.Total} kg\n\nFiş basılsın mı?",
-            "Sabit Dara Tartımı", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes)
-            return;
 
         try
         {
@@ -228,14 +265,11 @@ public sealed partial class TareWeighViewModel : ObservableObject, IActivatable
             if (!IsPaid)
             {
                 int fee = _repo.GetFee(IsVan ? VehicleType.Van : VehicleType.Truck);
-                string account = string.IsNullOrWhiteSpace(rec.Customer) ? rec.Plate : rec.Customer!;
-                _repo.AddReceivable(account, rec.Plate, rec.SecDate, fee);
+                _repo.AddReceivable(rec.Customer, rec.Plate, rec.SecDate, fee);
             }
 
             if (ShouldPrint)
                 _printer.Print(rec);
-
-            MessageBox.Show("Tartım kaydedildi ve fiş basıldı.", "Sabit Dara", MessageBoxButton.OK, MessageBoxImage.Information);
 
             // Plaka ve dara aynı kalır; bir sonraki dolu tartım için sadece dolu değeri sıfırlanır.
             if (!LiveWeight)

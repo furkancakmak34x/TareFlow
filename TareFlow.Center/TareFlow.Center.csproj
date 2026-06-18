@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <None Update="Database.db">
@@ -21,7 +21,8 @@
     <PackageReference Include="LibVLCSharp" Version="3.9.7.1" />
     <PackageReference Include="LibVLCSharp.WPF" Version="3.9.7.1" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" GeneratePathProperty="true" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -31,6 +32,21 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>icon.ico</ApplicationIcon>
+    <VlcWindowsX64Enabled>true</VlcWindowsX64Enabled>
   </PropertyGroup>
+
+  <!-- Garanti: libvlc native dosyalarını çıktıdaki libvlc\win-x64\ klasörüne kopyala.
+       (LibVLCSharp.Core.Initialize() bu klasörü arar. Paketin kendi hedefi bazen
+       temiz derlemede/incremental build'de çalışmıyor; bu hedef her zaman kopyalar.) -->
+  <Target Name="EnsureLibVlcNatives" AfterTargets="Build">
+    <ItemGroup>
+      <_VlcX64 Include="$(PkgVideoLAN_LibVLC_Windows)\build\x64\**\*.*" />
+      <_VlcX64 Include="$(PkgVideoLAN_LibVLC_Windows)\runtimes\win-x64\native\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_VlcX64)"
+          DestinationFiles="@(_VlcX64->'$(OutDir)libvlc\win-x64\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(_VlcX64)' != ''" />
+  </Target>
 
 </Project>

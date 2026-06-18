@@ -17,9 +17,6 @@ public sealed partial class WeighViewModel : ObservableObject, IActivatable
 
     [ObservableProperty] private string _plate = "";
     [ObservableProperty] private string _date = "";
-    [ObservableProperty] private bool _useCustomer;
-    [ObservableProperty] private bool _useVendor;
-    [ObservableProperty] private bool _useProduct;
     [ObservableProperty] private string _customer = "";
     [ObservableProperty] private string _vendor = "";
     [ObservableProperty] private string _product = "";
@@ -35,7 +32,6 @@ public sealed partial class WeighViewModel : ObservableObject, IActivatable
     {
         Date = DateTime.Now.ToString("yyyy-MM-dd HH:mm", new CultureInfo("tr-TR"));
         Plate = Customer = Vendor = Product = "";
-        UseCustomer = UseVendor = UseProduct = false;
     }
 
     [RelayCommand]
@@ -46,34 +42,21 @@ public sealed partial class WeighViewModel : ObservableObject, IActivatable
             MessageBox.Show("Plaka boş olamaz.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (!Scale.IsStable || Scale.CurrentWeight <= 0)
-        {
-            if (MessageBox.Show("Kararlı bir tartım değeri yok. Yine de devam edilsin mi?",
-                    "Tartım", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                return;
-        }
 
         var record = new WeightRecord
         {
-            Plate = Plate.Trim(),
+            Plate = Plate.Trim().ToUpperInvariant(),
             Date = Date,
             Weight = Scale.CurrentWeight,
-            Customer = UseCustomer ? Customer.Trim() : "",
-            Vendor = UseVendor ? Vendor.Trim() : "",
-            Product = UseProduct ? Product.Trim() : ""
+            Customer = (Customer ?? "").Trim(),
+            Vendor = (Vendor ?? "").Trim(),
+            Product = (Product ?? "").Trim()
         };
-
-        var confirm = MessageBox.Show(
-            $"Plaka: {record.Plate}\n1. Tartım: {record.Weight} kg\n\nKayıt onaylansın mı?",
-            "1. Tartım Onayı", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes)
-            return;
 
         try
         {
             _repo.AddWeight(record);
             _camera.TakeSnapshot(record.Plate);
-            MessageBox.Show("İlk tartım işlemi başarılı.", "Kayıt", MessageBoxButton.OK, MessageBoxImage.Information);
             OnActivated();
         }
         catch (Exception ex)

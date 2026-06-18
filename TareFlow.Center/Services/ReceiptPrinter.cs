@@ -24,15 +24,23 @@ public sealed class ReceiptPrinter
     private static readonly byte[] NormalSize = { 0x1D, 0x21, 0x00 };
     private static readonly byte[] FeedCut = { 0x1D, 0x56, 0x42, 0x00 }; // GS V B (besle+kes)
 
+    // ESC/P komutları (nokta vuruşlu yazıcılar için)
+    private static readonly byte[] EscInit = { 0x1B, 0x40 };  // ESC @  (reset)
+    private static readonly byte[] EscBoldOn = { 0x1B, 0x45 }; // ESC E
+    private static readonly byte[] EscBoldOff = { 0x1B, 0x46 }; // ESC F
+    private static readonly byte[] FormFeed = { 0x0C };        // sayfa ilerlet
+
     private readonly CenterSettings _settings;
     public ReceiptPrinter(CenterSettings settings) => _settings = settings;
 
     public void Print(SecWeightRecord rec)
     {
         if (string.IsNullOrWhiteSpace(_settings.PrinterName))
-            throw new InvalidOperationException("Yazıcı seçilmedi. Ayarlar'dan termal yazıcıyı seçin.");
+            throw new InvalidOperationException("Yazıcı seçilmedi. Ayarlar'dan yazıcıyı seçin.");
 
-        var bytes = Build(rec);
+        var bytes = _settings.PrinterKind == PrinterKind.DotMatrix
+            ? BuildDotMatrix(rec)
+            : Build(rec);
         RawPrinterHelper.SendBytes(_settings.PrinterName, bytes);
     }
 
@@ -79,6 +87,60 @@ public sealed class ReceiptPrinter
         Line();
 
         W(FeedCut);
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// Nokta vuruşlu yazıcı (ESC/P) çıktısı. USB'ye bağlı olsa da Windows kuyruğuna
+    /// RAW olarak ESC/P komutları gönderilir. Kesme yerine sayfa ilerletme (Form Feed).
+    /// </summary>
+    private static byte[] BuildDotMatrix(SecWeightRecord r)
+    {
+        const int w = 40;
+        var ms = new MemoryStream();
+        void W(byte[] b) => ms.Write(b, 0, b.Length);
+        void T(string s) => W(Encoding.ASCII.GetBytes(TextUtil.ConvertToAscii(s)));
+        void Line(string s = "") { T(s); W(new byte[] { 0x0A }); }
+        string Sep40() => new('-', w);
+        string Center(string s) => s.Length >= w ? s : s.PadLeft((w + s.Length) / 2);
+        string Field40(string label, string value) => $"{label,-8}: {value}";
+        string Amount40(string label, int kg)
+        {
+            string right = $"{kg.ToString("N0", Tr)} KG";
+            string left = $"{label,-10}: ";
+            return left + right.PadLeft(Math.Max(1, w - left.Length));
+        }
+
+        W(EscInit);
+
+        // Başlık (kalın)
+        W(EscBoldOn);
+        Line(Center("KANTAR FISI"));
+        W(EscBoldOff);
+        Line();
+
+        Line(Sep40());
+        Line(Field40("PLAKA", r.Plate));
+        Line(Field40("GIRIS", FormatDate(r.Date)));
+        Line(Field40("CIKIS", FormatDate(r.SecDate)));
+        if (!string.IsNullOrWhiteSpace(r.Customer)) Line(Field40("ALICI", r.Customer!));
+        if (!string.IsNullOrWhiteSpace(r.Vendor)) Line(Field40("SATICI", r.Vendor!));
+        if (!string.IsNullOrWhiteSpace(r.Product)) Line(Field40("URUN", r.Product!));
+        Line(Sep40());
+
+        Line(Amount40("1. TARTIM", r.Weight));
+        Line(Amount40("2. TARTIM", r.SecWeight));
+        Line(Sep40());
+
+        // Net (kalın)
+        W(EscBoldOn);
+        Line(Amount40("NET", r.Total));
+        W(EscBoldOff);
+        Line(Sep40());
+
+        Line(Center(DateTime.Now.ToString("dd MMMM yyyy HH:mm", Tr)));
+
+        W(FormFeed); // sayfayı ilerlet (nokta vuruşluda kesici yok)
         return ms.ToArray();
     }
 

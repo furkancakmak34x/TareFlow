@@ -48,6 +48,16 @@ public sealed class NotConverter : IValueConverter
         => value is not true;
 }
 
+/// <summary>null değilse true (örn. bir öğe seçiliyken paneli etkinleştirmek için).</summary>
+public sealed class NotNullToBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object? parameter, CultureInfo culture)
+        => value is not null;
+
+    public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 /// <summary>true→"Bağlı", false→"Bağlantı yok".</summary>
 public sealed class BoolToConnectionTextConverter : IValueConverter
 {

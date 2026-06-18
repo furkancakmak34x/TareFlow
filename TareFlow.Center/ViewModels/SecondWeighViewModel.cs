@@ -36,6 +36,8 @@ public sealed partial class SecondWeighViewModel : ObservableObject, IActivatabl
     [ObservableProperty] private bool _shouldPrint = true;
     [ObservableProperty] private bool _isVan; // false = Truck
 
+    private bool _updatingFromScale;
+
     public string SecDate { get; private set; } = "";
 
     public int Total => Selected is null ? 0 : Math.Abs(Selected.Weight - SecWeightValue);
@@ -52,7 +54,37 @@ public sealed partial class SecondWeighViewModel : ObservableObject, IActivatabl
     private void OnScaleChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (LiveWeight && e.PropertyName == nameof(ScaleClient.CurrentWeight))
+        {
+            _updatingFromScale = true;
             SecWeightValue = Scale.CurrentWeight;
+            _updatingFromScale = false;
+        }
+    }
+
+    partial void OnSecWeightValueChanged(int value)
+    {
+        if (!_updatingFromScale)
+        {
+            if (value == 0)
+            {
+                LiveWeight = true;
+                _updatingFromScale = true;
+                SecWeightValue = Scale.CurrentWeight;
+                _updatingFromScale = false;
+            }
+            else
+            {
+                LiveWeight = false;
+            }
+        }
+    }
+
+    partial void OnSelectedChanged(WeightRecord? value)
+    {
+        LiveWeight = true;
+        _updatingFromScale = true;
+        SecWeightValue = Scale.CurrentWeight;
+        _updatingFromScale = false;
     }
 
     public void OnActivated()
@@ -84,24 +116,26 @@ public sealed partial class SecondWeighViewModel : ObservableObject, IActivatabl
             return;
         }
 
+        string customer = (Selected.Customer ?? "").Trim();
+        if (!IsPaid && string.IsNullOrWhiteSpace(customer))
+        {
+            customer = Views.CustomerSelectionDialog.Show(_repo) ?? "";
+            if (string.IsNullOrWhiteSpace(customer))
+                return; // Abort saving if user cancelled
+        }
+
         var rec = new SecWeightRecord
         {
             Plate = Selected.Plate,
             Date = Selected.Date,
             SecDate = SecDate,
-            Customer = Selected.Customer,
+            Customer = customer,
             Vendor = Selected.Vendor,
             Product = Selected.Product,
             Weight = Selected.Weight,
             SecWeight = SecWeightValue,
             Total = Total
         };
-
-        var confirm = MessageBox.Show(
-            $"Plaka: {rec.Plate}\n1. Tartım: {rec.Weight} kg\n2. Tartım: {rec.SecWeight} kg\nNet: {rec.Total} kg\n\nKayıt onaylansın mı?",
-            "2. Tartım Onayı", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes)
-            return;
 
         try
         {
@@ -112,14 +146,12 @@ public sealed partial class SecondWeighViewModel : ObservableObject, IActivatabl
             if (!IsPaid)
             {
                 int fee = _repo.GetFee(IsVan ? VehicleType.Van : VehicleType.Truck);
-                string account = string.IsNullOrWhiteSpace(rec.Customer) ? rec.Plate : rec.Customer!;
-                _repo.AddReceivable(account, rec.Plate, rec.SecDate, fee);
+                _repo.AddReceivable(rec.Customer, rec.Plate, rec.SecDate, fee);
             }
 
             if (ShouldPrint)
                 _printer.Print(rec);
 
-            MessageBox.Show("İkinci tartım işlemi başarılı.", "Kayıt", MessageBoxButton.OK, MessageBoxImage.Information);
             Refresh();
         }
         catch (Exception ex)

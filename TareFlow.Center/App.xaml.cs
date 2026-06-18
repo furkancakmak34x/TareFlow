@@ -10,6 +10,12 @@ public partial class App : Application
     /// <summary>Kamera akışını görünümlerin paylaşması için basit servis erişimi.</summary>
     public static CameraService Camera { get; private set; } = null!;
 
+    /// <summary>PTZ (ONVIF) kontrol servisi — görünümler doğrudan kullanır.</summary>
+    public static PtzService Ptz { get; private set; } = null!;
+
+    /// <summary>Bas-konuş servisi (mikrofon → Agent).</summary>
+    public static TalkService Talk { get; private set; } = null!;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -21,14 +27,17 @@ public partial class App : Application
         var camera = new CameraService(settings);
         var printer = new ReceiptPrinter(settings);
         Camera = camera;
+        Ptz = new PtzService();
+        Talk = new TalkService(settings, camera);
 
         var weigh = new WeighViewModel(repo, scale, camera);
         var second = new SecondWeighViewModel(repo, scale, camera, printer);
+        var manual = new ManualWeighViewModel(repo, scale, camera, printer);
         var tare = new TareWeighViewModel(repo, scale, camera, printer);
-        var station = new WeighStationViewModel(weigh, second, tare, scale, camera);
-        var records = new RecordsViewModel(repo);
+        var station = new WeighStationViewModel(weigh, second, manual, tare, scale, camera);
+        var records = new RecordsViewModel(repo, printer);
         var receivable = new ReceivableViewModel(repo);
-        var settingsVm = new SettingsViewModel(settings, repo, scale, camera);
+        var settingsVm = new SettingsViewModel(settings, repo, scale, camera, Ptz);
 
         var shell = new ShellViewModel(scale, station, records, receivable, settingsVm);
 
@@ -39,6 +48,7 @@ public partial class App : Application
         {
             scale.Dispose();
             camera.Dispose();
+            Talk.Dispose();
         };
         window.Show();
 

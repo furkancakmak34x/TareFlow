@@ -10,6 +10,8 @@ public sealed class AgentSettings
     public string PortName { get; set; } = "COM1";
     public int BaudRate { get; set; } = 9600;
     public int ListenPort { get; set; } = ScaleProtocol.DefaultPort;
+    /// <summary>Bas-konuş sesinin (merkezden) dinleneceği TCP portu.</summary>
+    public int AudioPort { get; set; } = 9101;
     public bool AutoStart { get; set; } = true;
 
     private static string FilePath => Path.Combine(
