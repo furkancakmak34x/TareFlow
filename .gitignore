@@ -1,0 +1,21 @@
+## Build outputs
+**/bin/
+**/obj/
+[Bb]in/
+[Oo]bj/
+
+## Visual Studio cache / temporary files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Rider/JetBrains/VS Code
+.idea/
+.vscode/
+
+## OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
